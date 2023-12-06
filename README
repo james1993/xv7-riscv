@@ -1,7 +1,7 @@
 "xv6-riscv" is a re-implementation of Dennis Ritchie's and Ken Thompson's Unix
 Version 6 implemented for a modern RISC-V multiprocessor using ANSI C.
 
-This repository contains the following improvements on top of xv6:
+On top of refactoring, this repository contains the following improvements on top of xv6:
 - Implemented kernel threads
 - Added exceptions for null pointer dereferences
 - Changed the protection bits of parts of the page table to be read-only
