@@ -130,6 +130,33 @@ static uint64 (*syscalls[])(void) = {
 [SYS_readcount]	sys_readcount,
 };
 
+#ifdef SYSCALL_TRACE
+static char *syscall_names[] = {
+  "fork",
+  "exit",
+  "wait",
+  "pipe",
+  "read",
+  "kill",
+  "exec",
+  "fstat",
+  "chdir",
+  "dup",
+  "getpid",
+  "sbrk",
+  "sleep",
+  "uptime",
+  "open",
+  "write",
+  "mknod"
+  "unlink",
+  "link",
+  "mkdir",
+  "close",
+  "readcount",
+};
+#endif
+
 void
 syscall(void)
 {
@@ -141,6 +168,9 @@ syscall(void)
     // Use num to lookup the system call function for num, call it,
     // and store its return value in p->trapframe->a0
     p->trapframe->a0 = syscalls[num]();
+#ifdef SYSCALL_TRACE
+    printf("%s -> %d\n", syscall_names[num-1], p->trapframe->a0);
+#endif
   } else {
     printf("%d %s: unknown sys call %d\n",
             p->pid, p->name, num);
