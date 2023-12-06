@@ -7,7 +7,9 @@
 #include "defs.h"
 
 struct spinlock tickslock;
+struct spinlock readcountlock;
 uint ticks;
+uint readcount = 0;
 
 extern char trampoline[], uservec[], userret[];
 

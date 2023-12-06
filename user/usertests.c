@@ -2571,6 +2571,21 @@ badarg(char *s)
   exit(0);
 }
 
+//simple test of readcounts system call
+void readcountstest(char *s)
+{
+  int x1 = readcount();
+
+  char buf[100];
+  (void) read(4, buf, 1);
+  int x2 = readcount();
+
+  if(x2 == x1+1)
+    exit(0);
+
+  exit(1);
+}
+
 struct test {
   void (*f)(char *);
   char *s;
@@ -2635,6 +2650,7 @@ struct test {
   {sbrklast, "sbrklast"},
   {sbrk8000, "sbrk8000"},
   {badarg, "badarg" },
+  {readcountstest, "readcountstest" },
 
   { 0, 0},
 };

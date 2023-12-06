@@ -72,6 +72,8 @@ sys_read(void)
   int n;
   uint64 p;
 
+  readcount++;
+
   argaddr(1, &p);
   argint(2, &n);
   if(argfd(0, 0, &f) < 0)
