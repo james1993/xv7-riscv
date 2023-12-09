@@ -9,7 +9,7 @@
 struct spinlock tickslock;
 struct spinlock readcountlock;
 uint ticks;
-uint readcount = 0;
+uint readcount;
 
 extern char trampoline[], uservec[], userret[];
 
