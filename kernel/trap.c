@@ -207,6 +207,13 @@ devintr()
     // software interrupt from a machine-mode timer interrupt,
     // forwarded by timervec in kernelvec.S.
 
+    struct proc *p = myproc();
+
+    if (p && p->alarmticks != 0 && ++p->ticks >= p->alarmticks) {
+      p->alarmhandler();
+      p->ticks = 0;
+    }
+
     if(cpuid() == 0){
       clockintr();
     }

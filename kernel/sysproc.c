@@ -100,3 +100,17 @@ uint64 sys_readcount(void)
 
 	return xreadcount;
 }
+
+// after every n ticks of CPU time that the program consumes, call function fn
+uint64 sys_alarm(void)
+{
+	int n;
+	uint64 fn;
+
+	argint(0, &n);
+	argaddr(1, &fn);
+	myproc()->alarmticks = n;
+	myproc()->alarmhandler = (void (*)(void))fn;
+
+	return 0;
+}

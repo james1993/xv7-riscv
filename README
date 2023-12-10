@@ -6,4 +6,6 @@ On top of refactoring, this repository contains the following improvements on to
 - Added exceptions for null pointer dereferences
 - Changed the protection bits of parts of the page table to be read-only
 - Added a lottery scheduler for processes
-- Some new system calls & system call tracing
+- System call tracing
+- Alarm system call which periodically alerts a process as it uses CPU time
+- Read counts system call
