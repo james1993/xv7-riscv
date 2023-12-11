@@ -4,8 +4,7 @@ Version 6 implemented for a modern RISC-V multiprocessor using ANSI C.
 On top of refactoring, this repository contains the following additions:
 - Kernel threads
 - Exceptions for null pointer dereferences
-- Changed the protection bits of parts of the page table to be read-only
 - Lottery scheduler for processes
 - System call tracing
-- Alarm system call which periodically alerts a process as it uses CPU time
-- Read counts system call
+- New system calls: alarm, read counts, getpinfo, settickets (for scheduler)
+- Changed the protection bits of parts of the page table to be read-only
