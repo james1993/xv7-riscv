@@ -209,10 +209,8 @@ devintr()
 
     struct proc *p = myproc();
 
-    if (p && p->alarmticks != 0 && ++p->ticks >= p->alarmticks) {
+    if (p && p->alarmticks != 0 && ++p->ticks % p->alarmticks == 0)
       p->alarmhandler();
-      p->ticks = 0;
-    }
 
     if(cpuid() == 0){
       clockintr();

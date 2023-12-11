@@ -22,3 +22,5 @@
 #define SYS_close       21
 #define SYS_readcount   22
 #define SYS_alarm       23
+#define SYS_settickets  24
+#define SYS_getpinfo    25

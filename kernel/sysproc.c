@@ -5,6 +5,7 @@
 #include "memlayout.h"
 #include "spinlock.h"
 #include "proc.h"
+#include "pstat.h"
 
 uint64 sys_exit(void)
 {
@@ -111,6 +112,30 @@ uint64 sys_alarm(void)
 	argaddr(1, &fn);
 	myproc()->alarmticks = n;
 	myproc()->alarmhandler = (void (*)(void))fn;
+
+	return 0;
+}
+
+uint64 sys_settickets(int number)
+{
+	int n;
+
+	argint(0, &n);
+	if (n < 1)
+		return -1;
+
+	myproc()->tickets = n;
+
+	return 0;
+}
+
+uint64 sys_getpinfo(struct pstat *ps)
+{
+	uint64 p;
+	argaddr(0, &p);
+
+	ps = (struct pstat *)p;
+	procinfo(ps);
 
 	return 0;
 }

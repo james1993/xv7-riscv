@@ -5,6 +5,8 @@
 #include "spinlock.h"
 #include "proc.h"
 #include "defs.h"
+#include "pstat.h"
+#include "rand.h"
 
 struct cpu cpus[NCPU];
 
@@ -148,6 +150,8 @@ found:
 
   p->ticks = 0;
   p->alarmhandler = 0;
+
+  p->tickets = 1;
 
   return p;
 }
@@ -298,6 +302,7 @@ fork(void)
     return -1;
   }
   np->sz = p->sz;
+  np->tickets = p->tickets;
 
   // copy saved user registers.
   *(np->trapframe) = *(p->trapframe);
@@ -449,28 +454,49 @@ scheduler(void)
 {
   struct proc *p;
   struct cpu *c = mycpu();
+  uint64 total_tickets = 0, winner;
+  int i, tickets[NPROC];
   
   c->proc = 0;
   for(;;){
     // Avoid deadlock by ensuring that devices can interrupt.
     intr_on();
 
-    for(p = proc; p < &proc[NPROC]; p++) {
-      acquire(&p->lock);
-      if(p->state == RUNNABLE) {
-        // Switch to chosen process.  It is the process's job
-        // to release its lock and then reacquire it
-        // before jumping back to us.
-        p->state = RUNNING;
-        c->proc = p;
-        swtch(&c->context, &p->context);
-
-        // Process is done running for now.
-        // It should have changed its p->state before coming back.
-        c->proc = 0;
+    // Gather tickets
+    for(i = 0; i < NPROC; i++) {
+      if (proc[i].state != RUNNABLE) {
+        continue;
       }
-      release(&p->lock);
+      total_tickets += proc[i].tickets;
+      tickets[i] = total_tickets;
     }
+
+    winner = rand() % total_tickets;
+
+    // Select winner
+    for (i = 0; i < NPROC; i++) {
+      if (tickets[i] > winner) {
+        p = &proc[i];
+        break;
+      }
+      if (i == NPROC - 1)
+        p = &proc[i-1];
+    }
+
+    acquire(&p->lock);
+    if(p->state == RUNNABLE) {
+      // Switch to chosen process.  It is the process's job
+      // to release its lock and then reacquire it
+      // before jumping back to us.
+      p->state = RUNNING;
+      c->proc = p;
+      swtch(&c->context, &p->context);
+
+      // Process is done running for now.
+      // It should have changed its p->state before coming back.
+      c->proc = 0;
+    }
+    release(&p->lock);
   }
 }
 
@@ -683,4 +709,18 @@ procdump(void)
     printf("%d %s %s", p->pid, state, p->name);
     printf("\n");
   }
+}
+
+void
+procinfo(struct pstat *ps)
+{
+  struct proc *p;
+
+  for(p = &proc[0]; p < &proc[NPROC]; p++){
+      acquire(&p->lock);
+      ps->tickets[&proc[NPROC] - p] = p->tickets;
+      ps->ticks[&proc[NPROC] - p] = p->ticks;
+      ps->pid[&proc[NPROC] - p] = p->pid;
+      release(&p->lock);
+    }
 }
