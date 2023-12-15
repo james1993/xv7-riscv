@@ -11,8 +11,8 @@ bootblock
 entryother
 initcode
 initcode.out
-kernelmemfs
+kernelmemfss
 mkfs
-kernel/kernel
+kernel/kernels
 user/usys.S
 .gdbinit
