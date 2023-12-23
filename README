@@ -5,7 +5,7 @@ On top of refactoring, this repository contains the following additions:
 - Lottery scheduler for processes (done)
 - System call tracing (done)
 - New system calls: alarm, read counts, getpinfo, settickets (done)
-- A user-level sleep program (done)
+- New user-level programs: sleep, pingpong (done)
 - Kernel threads (in progress)
 - Exceptions for null pointer dereferences (in progress)
 - Changed the protection bits of parts of the page table (e.g. code) to be read-only (in progress)
