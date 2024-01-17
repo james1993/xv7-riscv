@@ -21,18 +21,20 @@ void
 start()
 {
   // set M Previous Privilege mode to Supervisor, for mret.
+  // AKA when we return from here, return into supervisor mode
   unsigned long x = r_mstatus();
   x &= ~MSTATUS_MPP_MASK;
   x |= MSTATUS_MPP_S;
   w_mstatus(x);
 
   // set M Exception Program Counter to main, for mret.
-  // requires gcc -mcmodel=medany
+  // AKA when we return from here, return to main
   w_mepc((uint64)main);
 
-  // disable paging for now.
+  // disable paging for now. probably off by default, but just in case
   w_satp(0);
 
+  // traps by default go to highest privelege (machine mode).
   // delegate all interrupts and exceptions to supervisor mode.
   w_medeleg(0xffff);
   w_mideleg(0xffff);
@@ -47,10 +49,10 @@ start()
   timerinit();
 
   // keep each CPU's hartid in its tp register, for cpuid().
-  int id = r_mhartid();
-  w_tp(id);
+  // so supervisor mode always knows which core is running
+  w_tp(r_mhartid());
 
-  // switch to supervisor mode and jump to main().
+  // machine mode return
   asm volatile("mret");
 }
 
@@ -73,6 +75,8 @@ timerinit()
   // scratch[0..2] : space for timervec to save registers.
   // scratch[3] : address of CLINT MTIMECMP register.
   // scratch[4] : desired interval (in cycles) between timer interrupts.
+  // gives us ability to save the state and restore it while we execute
+  // interrupts
   uint64 *scratch = &timer_scratch[id][0];
   scratch[3] = CLINT_MTIMECMP(id);
   scratch[4] = interval;
