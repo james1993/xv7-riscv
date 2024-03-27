@@ -1,21 +1,21 @@
 // Saved registers for kernel context switches.
 struct context {
-  uint64 ra;
-  uint64 sp;
+  unsigned long ra;
+  unsigned long sp;
 
   // callee-saved
-  uint64 s0;
-  uint64 s1;
-  uint64 s2;
-  uint64 s3;
-  uint64 s4;
-  uint64 s5;
-  uint64 s6;
-  uint64 s7;
-  uint64 s8;
-  uint64 s9;
-  uint64 s10;
-  uint64 s11;
+  unsigned long s0;
+  unsigned long s1;
+  unsigned long s2;
+  unsigned long s3;
+  unsigned long s4;
+  unsigned long s5;
+  unsigned long s6;
+  unsigned long s7;
+  unsigned long s8;
+  unsigned long s9;
+  unsigned long s10;
+  unsigned long s11;
 };
 
 // Per-CPU state.
@@ -41,42 +41,42 @@ extern struct cpu cpus[NCPU];
 // return-to-user path via usertrapret() doesn't return through
 // the entire kernel call stack.
 struct trapframe {
-  /*   0 */ uint64 kernel_satp;   // kernel page table
-  /*   8 */ uint64 kernel_sp;     // top of process's kernel stack
-  /*  16 */ uint64 kernel_trap;   // usertrap()
-  /*  24 */ uint64 epc;           // saved user program counter
-  /*  32 */ uint64 kernel_hartid; // saved kernel tp
-  /*  40 */ uint64 ra;
-  /*  48 */ uint64 sp;
-  /*  56 */ uint64 gp;
-  /*  64 */ uint64 tp;
-  /*  72 */ uint64 t0;
-  /*  80 */ uint64 t1;
-  /*  88 */ uint64 t2;
-  /*  96 */ uint64 s0;
-  /* 104 */ uint64 s1;
-  /* 112 */ uint64 a0;
-  /* 120 */ uint64 a1;
-  /* 128 */ uint64 a2;
-  /* 136 */ uint64 a3;
-  /* 144 */ uint64 a4;
-  /* 152 */ uint64 a5;
-  /* 160 */ uint64 a6;
-  /* 168 */ uint64 a7;
-  /* 176 */ uint64 s2;
-  /* 184 */ uint64 s3;
-  /* 192 */ uint64 s4;
-  /* 200 */ uint64 s5;
-  /* 208 */ uint64 s6;
-  /* 216 */ uint64 s7;
-  /* 224 */ uint64 s8;
-  /* 232 */ uint64 s9;
-  /* 240 */ uint64 s10;
-  /* 248 */ uint64 s11;
-  /* 256 */ uint64 t3;
-  /* 264 */ uint64 t4;
-  /* 272 */ uint64 t5;
-  /* 280 */ uint64 t6;
+  /*   0 */ unsigned long kernel_satp;   // kernel page table
+  /*   8 */ unsigned long kernel_sp;     // top of process's kernel stack
+  /*  16 */ unsigned long kernel_trap;   // usertrap()
+  /*  24 */ unsigned long epc;           // saved user program counter
+  /*  32 */ unsigned long kernel_hartid; // saved kernel tp
+  /*  40 */ unsigned long ra;
+  /*  48 */ unsigned long sp;
+  /*  56 */ unsigned long gp;
+  /*  64 */ unsigned long tp;
+  /*  72 */ unsigned long t0;
+  /*  80 */ unsigned long t1;
+  /*  88 */ unsigned long t2;
+  /*  96 */ unsigned long s0;
+  /* 104 */ unsigned long s1;
+  /* 112 */ unsigned long a0;
+  /* 120 */ unsigned long a1;
+  /* 128 */ unsigned long a2;
+  /* 136 */ unsigned long a3;
+  /* 144 */ unsigned long a4;
+  /* 152 */ unsigned long a5;
+  /* 160 */ unsigned long a6;
+  /* 168 */ unsigned long a7;
+  /* 176 */ unsigned long s2;
+  /* 184 */ unsigned long s3;
+  /* 192 */ unsigned long s4;
+  /* 200 */ unsigned long s5;
+  /* 208 */ unsigned long s6;
+  /* 216 */ unsigned long s7;
+  /* 224 */ unsigned long s8;
+  /* 232 */ unsigned long s9;
+  /* 240 */ unsigned long s10;
+  /* 248 */ unsigned long s11;
+  /* 256 */ unsigned long t3;
+  /* 264 */ unsigned long t4;
+  /* 272 */ unsigned long t5;
+  /* 280 */ unsigned long t6;
 };
 
 enum procstate { UNUSED, USED, SLEEPING, RUNNABLE, RUNNING, ZOMBIE };
@@ -87,7 +87,7 @@ struct proc {
 
   // p->lock must be held when using these:
   enum procstate state;        // Process state
-  void *chan;                  // If non-zero, sleeping on chan
+  void *channel;                  // If non-zero, sleeping on chan
   int killed;                  // If non-zero, have been killed
   int xstate;                  // Exit status to be returned to parent's wait
   int pid;                     // Process ID
@@ -96,8 +96,8 @@ struct proc {
   struct proc *parent;         // Parent process
 
   // these are private to the process, so p->lock need not be held.
-  uint64 kstack;               // Virtual address of kernel stack
-  uint64 sz;                   // Size of process memory (bytes)
+  unsigned long kstack;               // Virtual address of kernel stack
+  unsigned long sz;                   // Size of process memory (bytes)
   pagetable_t pagetable;       // User page table
   struct trapframe *trapframe; // data page for trampoline.S
   struct context context;      // swtch() here to run process

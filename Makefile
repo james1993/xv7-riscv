@@ -30,10 +30,6 @@ OBJS = \
   $K/plic.o \
   $K/virtio_disk.o
 
-# riscv64-unknown-elf- or riscv64-linux-gnu-
-# perhaps in /opt/riscv/bin
-#TOOLPREFIX = 
-
 # Try to infer the correct TOOLPREFIX if not set
 ifndef TOOLPREFIX
 TOOLPREFIX := $(shell if riscv64-unknown-elf-objdump -i 2>&1 | grep 'elf64-big' >/dev/null 2>&1; \
@@ -59,6 +55,7 @@ OBJDUMP = $(TOOLPREFIX)objdump
 CFLAGS = -Wall -Werror -O -fno-omit-frame-pointer -ggdb -gdwarf-2
 CFLAGS += -MD
 CFLAGS += -mcmodel=medany
+CFLAGS += -std=c2x
 CFLAGS += -ffreestanding -fno-common -nostdlib -mno-relax
 CFLAGS += -I.
 CFLAGS += $(shell $(CC) -fno-stack-protector -E -x c /dev/null >/dev/null 2>&1 && echo -fno-stack-protector)

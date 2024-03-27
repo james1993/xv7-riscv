@@ -1,4 +1,3 @@
-#include "types.h"
 #include "riscv.h"
 #include "defs.h"
 #include "param.h"
@@ -13,8 +12,8 @@
 struct pipe {
   struct spinlock lock;
   char data[PIPESIZE];
-  uint nread;     // number of bytes read
-  uint nwrite;    // number of bytes written
+  unsigned int nread;     // number of bytes read
+  unsigned int nwrite;    // number of bytes written
   int readopen;   // read fd is still open
   int writeopen;  // write fd is still open
 };
@@ -34,7 +33,7 @@ pipealloc(struct file **f0, struct file **f1)
   pi->writeopen = 1;
   pi->nwrite = 0;
   pi->nread = 0;
-  initlock(&pi->lock, "pipe");
+  initlock(&pi->lock);
   (*f0)->type = FD_PIPE;
   (*f0)->readable = 1;
   (*f0)->writable = 0;
@@ -74,7 +73,7 @@ pipeclose(struct pipe *pi, int writable)
 }
 
 int
-pipewrite(struct pipe *pi, uint64 addr, int n)
+pipewrite(struct pipe *pi, unsigned long addr, int n)
 {
   int i = 0;
   struct proc *pr = myproc();
@@ -90,7 +89,7 @@ pipewrite(struct pipe *pi, uint64 addr, int n)
       sleep(&pi->nwrite, &pi->lock);
     } else {
       char ch;
-      if(copyin(pr->pagetable, &ch, addr + i, 1) == -1)
+      if(copy_from_user(pr->pagetable, &ch, addr + i, 1) == -1)
         break;
       pi->data[pi->nwrite++ % PIPESIZE] = ch;
       i++;
@@ -103,7 +102,7 @@ pipewrite(struct pipe *pi, uint64 addr, int n)
 }
 
 int
-piperead(struct pipe *pi, uint64 addr, int n)
+piperead(struct pipe *pi, unsigned long addr, int n)
 {
   int i;
   struct proc *pr = myproc();
@@ -121,7 +120,7 @@ piperead(struct pipe *pi, uint64 addr, int n)
     if(pi->nread == pi->nwrite)
       break;
     ch = pi->data[pi->nread++ % PIPESIZE];
-    if(copyout(pr->pagetable, addr + i, &ch, 1) == -1)
+    if(copy_to_user(pr->pagetable, addr + i, &ch, 1) == -1)
       break;
   }
   wakeup(&pi->nwrite);  //DOC: piperead-wakeup

@@ -2,7 +2,6 @@
 // Support functions for system calls that involve file descriptors.
 //
 
-#include "types.h"
 #include "riscv.h"
 #include "defs.h"
 #include "param.h"
@@ -22,7 +21,7 @@ struct {
 void
 fileinit(void)
 {
-  initlock(&ftable.lock, "ftable");
+  initlock(&ftable.lock);
 }
 
 // Allocate a file structure.
@@ -85,7 +84,7 @@ fileclose(struct file *f)
 // Get metadata about file f.
 // addr is a user virtual address, pointing to a struct stat.
 int
-filestat(struct file *f, uint64 addr)
+filestat(struct file *f, unsigned long addr)
 {
   struct proc *p = myproc();
   struct stat st;
@@ -94,7 +93,7 @@ filestat(struct file *f, uint64 addr)
     ilock(f->ip);
     stati(f->ip, &st);
     iunlock(f->ip);
-    if(copyout(p->pagetable, addr, (char *)&st, sizeof(st)) < 0)
+    if(copy_to_user(p->pagetable, addr, (char *)&st, sizeof(st)) < 0)
       return -1;
     return 0;
   }
@@ -104,7 +103,7 @@ filestat(struct file *f, uint64 addr)
 // Read from file f.
 // addr is a user virtual address.
 int
-fileread(struct file *f, uint64 addr, int n)
+fileread(struct file *f, unsigned long addr, int n)
 {
   int r = 0;
 
@@ -116,7 +115,7 @@ fileread(struct file *f, uint64 addr, int n)
   } else if(f->type == FD_DEVICE){
     if(f->major < 0 || f->major >= NDEV || !devsw[f->major].read)
       return -1;
-    r = devsw[f->major].read(1, addr, n);
+    r = devsw[f->major].read(addr, n);
   } else if(f->type == FD_INODE){
     ilock(f->ip);
     if((r = readi(f->ip, 1, addr, f->off, n)) > 0)
@@ -132,7 +131,7 @@ fileread(struct file *f, uint64 addr, int n)
 // Write to file f.
 // addr is a user virtual address.
 int
-filewrite(struct file *f, uint64 addr, int n)
+filewrite(struct file *f, unsigned long addr, int n)
 {
   int r, ret = 0;
 
@@ -144,7 +143,7 @@ filewrite(struct file *f, uint64 addr, int n)
   } else if(f->type == FD_DEVICE){
     if(f->major < 0 || f->major >= NDEV || !devsw[f->major].write)
       return -1;
-    ret = devsw[f->major].write(1, addr, n);
+    ret = devsw[f->major].write(addr, n);
   } else if(f->type == FD_INODE){
     // write a few blocks at a time to avoid exceeding
     // the maximum log transaction size, including

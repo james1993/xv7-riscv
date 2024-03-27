@@ -1,4 +1,3 @@
-#include "types.h"
 #include "riscv.h"
 #include "defs.h"
 #include "param.h"
@@ -57,7 +56,7 @@ initlog(int dev, struct superblock *sb)
   if (sizeof(struct logheader) >= BSIZE)
     panic("initlog: too big logheader");
 
-  initlock(&log.lock, "log");
+  initlock(&log.lock);
   log.start = sb->logstart;
   log.size = sb->nlog;
   log.dev = dev;

@@ -3,7 +3,6 @@
 //
 
 #include "kernel/param.h"
-#include "kernel/types.h"
 #include "kernel/stat.h"
 #include "user/user.h"
 #include "kernel/fs.h"
@@ -53,7 +52,7 @@ go(int which_child)
   int fd = -1;
   static char buf[999];
   char *break0 = sbrk(0);
-  uint64 iters = 0;
+  unsigned long iters = 0;
 
   mkdir("grindir");
   if(chdir("grindir") != 0){

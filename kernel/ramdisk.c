@@ -2,7 +2,6 @@
 // ramdisk that uses the disk image loaded by qemu -initrd fs.img
 //
 
-#include "types.h"
 #include "riscv.h"
 #include "defs.h"
 #include "param.h"
@@ -30,7 +29,7 @@ ramdiskrw(struct buf *b)
   if(b->blockno >= FSSIZE)
     panic("ramdiskrw: blockno too big");
 
-  uint64 diskaddr = b->blockno * BSIZE;
+  unsigned long diskaddr = b->blockno * BSIZE;
   char *addr = (char *)RAMDISK + diskaddr;
 
   if(b->flags & B_DIRTY){

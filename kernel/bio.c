@@ -13,8 +13,6 @@
 // * Only one process at a time can use a buffer,
 //     so do not keep them longer than necessary.
 
-
-#include "types.h"
 #include "param.h"
 #include "spinlock.h"
 #include "sleeplock.h"
@@ -37,7 +35,7 @@ void binit(void)
 {
   struct buf *b;
 
-  initlock(&bcache.lock, "bcache");
+  initlock(&bcache.lock);
 
   // Create linked list of buffers
   bcache.head.prev = &bcache.head;
@@ -45,7 +43,7 @@ void binit(void)
   for(b = bcache.buf; b < bcache.buf+NBUF; b++){
     b->next = bcache.head.next;
     b->prev = &bcache.head;
-    initsleeplock(&b->lock, "buffer");
+    initsleeplock(&b->lock);
     bcache.head.next->prev = b;
     bcache.head.next = b;
   }
@@ -55,7 +53,7 @@ void binit(void)
 // If not found, allocate a buffer.
 // In either case, return locked buffer.
 static struct buf*
-bget(uint dev, uint blockno)
+bget(unsigned int dev, unsigned int blockno)
 {
   struct buf *b;
 
@@ -89,7 +87,7 @@ bget(uint dev, uint blockno)
 
 // Return a locked buf with the contents of the indicated block.
 struct buf*
-bread(uint dev, uint blockno)
+bread(unsigned int dev, unsigned int blockno)
 {
   struct buf *b;
 

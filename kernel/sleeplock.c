@@ -1,6 +1,5 @@
 // Sleeping locks
 
-#include "types.h"
 #include "riscv.h"
 #include "defs.h"
 #include "param.h"
@@ -10,10 +9,9 @@
 #include "sleeplock.h"
 
 void
-initsleeplock(struct sleeplock *lk, char *name)
+initsleeplock(struct sleeplock *lk)
 {
-  initlock(&lk->lk, "sleep lock");
-  lk->name = name;
+  initlock(&lk->lk);
   lk->locked = 0;
   lk->pid = 0;
 }

@@ -1,4 +1,3 @@
-#include "types.h"
 #include "param.h"
 #include "memlayout.h"
 #include "riscv.h"
@@ -40,8 +39,8 @@ proc_mapstacks(pagetable_t kpgtbl)
     char *pa = kalloc();
     if(pa == 0)
       panic("kalloc");
-    uint64 va = KSTACK((int) (p - proc));
-    kvmmap(kpgtbl, va, (uint64)pa, PGSIZE, PTE_R | PTE_W);
+    unsigned long va = KSTACK((int) (p - proc));
+    kvmmap(kpgtbl, va, (unsigned long)pa, PGSIZE, PTE_R | PTE_W);
   }
 }
 
@@ -51,10 +50,10 @@ procinit(void)
 {
   struct proc *p;
   
-  initlock(&pid_lock, "nextpid");
-  initlock(&wait_lock, "wait_lock");
+  initlock(&pid_lock);
+  initlock(&wait_lock);
   for(p = proc; p < &proc[NPROC]; p++) {
-      initlock(&p->lock, "proc");
+      initlock(&p->lock);
       p->state = UNUSED;
       p->kstack = KSTACK((int) (p - proc));
   }
@@ -145,7 +144,7 @@ found:
   // Set up new context to start executing at forkret,
   // which returns to user space.
   memset(&p->context, 0, sizeof(p->context));
-  p->context.ra = (uint64)forkret;
+  p->context.ra = (unsigned long)forkret;
   p->context.sp = p->kstack + PGSIZE;
 
   p->ticks = 0;
@@ -172,7 +171,7 @@ freeproc(struct proc *p)
   p->pid = 0;
   p->parent = 0;
   p->name[0] = 0;
-  p->chan = 0;
+  p->channel = 0;
   p->killed = 0;
   p->xstate = 0;
   p->state = UNUSED;
@@ -195,7 +194,7 @@ proc_pagetable(struct proc *p)
   // only the supervisor uses it, on the way
   // to/from user space, so not PTE_U.
   if(mappages(pagetable, TRAMPOLINE, PGSIZE,
-              (uint64)trampoline, PTE_R | PTE_X) < 0){
+              (unsigned long)trampoline, PTE_R | PTE_X) < 0){
     uvmfree(pagetable, 0);
     return 0;
   }
@@ -203,7 +202,7 @@ proc_pagetable(struct proc *p)
   // map the trapframe page just below the trampoline page, for
   // trampoline.S.
   if(mappages(pagetable, TRAPFRAME, PGSIZE,
-              (uint64)(p->trapframe), PTE_R | PTE_W) < 0){
+              (unsigned long)(p->trapframe), PTE_R | PTE_W) < 0){
     uvmunmap(pagetable, TRAMPOLINE, 1, 0);
     uvmfree(pagetable, 0);
     return 0;
@@ -215,7 +214,7 @@ proc_pagetable(struct proc *p)
 // Free a process's page table, and free the
 // physical memory it refers to.
 void
-proc_freepagetable(pagetable_t pagetable, uint64 sz)
+proc_freepagetable(pagetable_t pagetable, unsigned long sz)
 {
   uvmunmap(pagetable, TRAMPOLINE, 1, 0);
   uvmunmap(pagetable, TRAPFRAME, 1, 0);
@@ -225,7 +224,7 @@ proc_freepagetable(pagetable_t pagetable, uint64 sz)
 // a user program that calls exec("/init")
 // assembled from ../user/initcode.S
 // od -t xC ../user/initcode
-uchar initcode[] = {
+unsigned char initcode[] = {
   0x17, 0x05, 0x00, 0x00, 0x13, 0x05, 0x45, 0x02,
   0x97, 0x05, 0x00, 0x00, 0x93, 0x85, 0x35, 0x02,
   0x93, 0x08, 0x70, 0x00, 0x73, 0x00, 0x00, 0x00,
@@ -266,7 +265,7 @@ userinit(void)
 int
 growproc(int n)
 {
-  uint64 sz;
+  unsigned long sz;
   struct proc *p = myproc();
 
   sz = p->sz;
@@ -396,7 +395,7 @@ exit(int status)
 // Wait for a child process to exit and return its pid.
 // Return -1 if this process has no children.
 int
-wait(uint64 addr)
+wait(unsigned long addr)
 {
   struct proc *pp;
   int havekids, pid;
@@ -416,7 +415,7 @@ wait(uint64 addr)
         if(pp->state == ZOMBIE){
           // Found one.
           pid = pp->pid;
-          if(addr != 0 && copyout(p->pagetable, addr, (char *)&pp->xstate,
+          if(addr != 0 && copy_to_user(p->pagetable, addr, (char *)&pp->xstate,
                                   sizeof(pp->xstate)) < 0) {
             release(&pp->lock);
             release(&wait_lock);
@@ -454,7 +453,7 @@ scheduler(void)
 {
   struct proc *p;
   struct cpu *c = mycpu();
-  uint64 total_tickets = 0, winner;
+  unsigned long total_tickets = 0, winner;
   int i, tickets[NPROC];
   
   c->proc = 0;
@@ -559,10 +558,10 @@ forkret(void)
   usertrapret();
 }
 
-// Atomically release lock and sleep on chan.
+// Atomically release lock and sleep on 'wait channel'.
 // Reacquires lock when awakened.
 void
-sleep(void *chan, struct spinlock *lk)
+sleep(void *channel, struct spinlock *lk)
 {
   struct proc *p = myproc();
   
@@ -577,30 +576,30 @@ sleep(void *chan, struct spinlock *lk)
   release(lk);
 
   // Go to sleep.
-  p->chan = chan;
+  p->channel = channel;
   p->state = SLEEPING;
 
   sched();
 
   // Tidy up.
-  p->chan = 0;
+  p->channel = 0;
 
   // Reacquire original lock.
   release(&p->lock);
   acquire(lk);
 }
 
-// Wake up all processes sleeping on chan.
+// Wake up all processes sleeping on channel.
 // Must be called without any p->lock.
 void
-wakeup(void *chan)
+wakeup(void *channel)
 {
   struct proc *p;
 
   for(p = proc; p < &proc[NPROC]; p++) {
     if(p != myproc()){
       acquire(&p->lock);
-      if(p->state == SLEEPING && p->chan == chan) {
+      if(p->state == SLEEPING && p->channel == channel) {
         p->state = RUNNABLE;
       }
       release(&p->lock);
@@ -655,11 +654,11 @@ killed(struct proc *p)
 // depending on usr_dst.
 // Returns 0 on success, -1 on error.
 int
-either_copyout(int user_dst, uint64 dst, void *src, uint64 len)
+either_copyout(bool user_dst, unsigned long dst, void *src, unsigned long len)
 {
   struct proc *p = myproc();
   if(user_dst){
-    return copyout(p->pagetable, dst, src, len);
+    return copy_to_user(p->pagetable, dst, src, len);
   } else {
     memmove((char *)dst, src, len);
     return 0;
@@ -670,11 +669,11 @@ either_copyout(int user_dst, uint64 dst, void *src, uint64 len)
 // depending on usr_src.
 // Returns 0 on success, -1 on error.
 int
-either_copyin(void *dst, int user_src, uint64 src, uint64 len)
+either_copyin(void *dst, bool user_src, unsigned long src, unsigned long len)
 {
   struct proc *p = myproc();
   if(user_src){
-    return copyin(p->pagetable, dst, src, len);
+    return copy_from_user(p->pagetable, dst, src, len);
   } else {
     memmove(dst, (char*)src, len);
     return 0;

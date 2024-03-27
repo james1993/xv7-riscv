@@ -1,4 +1,3 @@
-#include "types.h"
 #include "param.h"
 #include "memlayout.h"
 #include "riscv.h"
@@ -7,7 +6,7 @@
 #include "defs.h"
 #include "elf.h"
 
-static int loadseg(pde_t *, uint64, struct inode *, uint, uint);
+static int loadseg(unsigned long *, unsigned long, struct inode *, unsigned int, unsigned int);
 
 int flags2perm(int flags)
 {
@@ -24,7 +23,7 @@ exec(char *path, char **argv)
 {
   char *s, *last;
   int i, off;
-  uint64 argc, sz = 0, sp, ustack[MAXARG], stackbase;
+  unsigned long argc, sz = 0, sp, ustack[MAXARG], stackbase;
   struct elfhdr elf;
   struct inode *ip;
   struct proghdr ph;
@@ -40,7 +39,7 @@ exec(char *path, char **argv)
   ilock(ip);
 
   // Check ELF header
-  if(readi(ip, 0, (uint64)&elf, 0, sizeof(elf)) != sizeof(elf))
+  if(readi(ip, 0, (unsigned long)&elf, 0, sizeof(elf)) != sizeof(elf))
     goto bad;
 
   if(elf.magic != ELF_MAGIC)
@@ -51,7 +50,7 @@ exec(char *path, char **argv)
 
   // Load program into memory.
   for(i=0, off=elf.phoff; i<elf.phnum; i++, off+=sizeof(ph)){
-    if(readi(ip, 0, (uint64)&ph, off, sizeof(ph)) != sizeof(ph))
+    if(readi(ip, 0, (unsigned long)&ph, off, sizeof(ph)) != sizeof(ph))
       goto bad;
     if(ph.type != ELF_PROG_LOAD)
       continue;
@@ -61,7 +60,7 @@ exec(char *path, char **argv)
       goto bad;
     if(ph.vaddr % PGSIZE != 0)
       goto bad;
-    uint64 sz1;
+    unsigned long sz1;
     if((sz1 = uvmalloc(pagetable, sz, ph.vaddr + ph.memsz, flags2perm(ph.flags))) == 0)
       goto bad;
     sz = sz1;
@@ -73,13 +72,13 @@ exec(char *path, char **argv)
   ip = 0;
 
   p = myproc();
-  uint64 oldsz = p->sz;
+  unsigned long oldsz = p->sz;
 
   // Allocate two pages at the next page boundary.
   // Make the first inaccessible as a stack guard.
   // Use the second as the user stack.
   sz = PGROUNDUP(sz);
-  uint64 sz1;
+  unsigned long sz1;
   if((sz1 = uvmalloc(pagetable, sz, sz + 2*PGSIZE, PTE_W)) == 0)
     goto bad;
   sz = sz1;
@@ -95,18 +94,18 @@ exec(char *path, char **argv)
     sp -= sp % 16; // riscv sp must be 16-byte aligned
     if(sp < stackbase)
       goto bad;
-    if(copyout(pagetable, sp, argv[argc], strlen(argv[argc]) + 1) < 0)
+    if(copy_to_user(pagetable, sp, argv[argc], strlen(argv[argc]) + 1) < 0)
       goto bad;
     ustack[argc] = sp;
   }
   ustack[argc] = 0;
 
   // push the array of argv[] pointers.
-  sp -= (argc+1) * sizeof(uint64);
+  sp -= (argc+1) * sizeof(unsigned long);
   sp -= sp % 16;
   if(sp < stackbase)
     goto bad;
-  if(copyout(pagetable, sp, (char *)ustack, (argc+1)*sizeof(uint64)) < 0)
+  if(copy_to_user(pagetable, sp, (char *)ustack, (argc+1)*sizeof(unsigned long)) < 0)
     goto bad;
 
   // arguments to user main(argc, argv)
@@ -145,10 +144,10 @@ exec(char *path, char **argv)
 // and the pages from va to va+sz must already be mapped.
 // Returns 0 on success, -1 on failure.
 static int
-loadseg(pagetable_t pagetable, uint64 va, struct inode *ip, uint offset, uint sz)
+loadseg(pagetable_t pagetable, unsigned long va, struct inode *ip, unsigned int offset, unsigned int sz)
 {
-  uint i, n;
-  uint64 pa;
+  unsigned int i, n;
+  unsigned long pa;
 
   for(i = 0; i < sz; i += PGSIZE){
     pa = walkaddr(pagetable, va + i);
@@ -158,7 +157,7 @@ loadseg(pagetable_t pagetable, uint64 va, struct inode *ip, uint offset, uint sz
       n = sz - i;
     else
       n = PGSIZE;
-    if(readi(ip, 0, (uint64)pa, offset+i, n) != n)
+    if(readi(ip, 0, (unsigned long)pa, offset+i, n) != n)
       return -1;
   }
   

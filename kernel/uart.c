@@ -2,7 +2,6 @@
 // low-level driver routines for 16550a UART.
 //
 
-#include "types.h"
 #include "param.h"
 #include "memlayout.h"
 #include "riscv.h"
@@ -15,10 +14,6 @@
 // address of one of the registers.
 #define Reg(reg) ((volatile unsigned char *)(UART0 + reg))
 
-// the UART control registers.
-// some have different meanings for
-// read vs write.
-// see http://byterunner.com/16550.html
 #define RHR 0                 // receive holding register (for input bytes)
 #define THR 0                 // transmit holding register (for output bytes)
 #define IER 1                 // interrupt enable register
@@ -42,15 +37,14 @@
 struct spinlock uart_tx_lock;
 #define UART_TX_BUF_SIZE 32
 char uart_tx_buf[UART_TX_BUF_SIZE];
-uint64 uart_tx_w; // write next to uart_tx_buf[uart_tx_w % UART_TX_BUF_SIZE]
-uint64 uart_tx_r; // read next from uart_tx_buf[uart_tx_r % UART_TX_BUF_SIZE]
+unsigned long uart_tx_w; // write next to uart_tx_buf[uart_tx_w % UART_TX_BUF_SIZE]
+unsigned long uart_tx_r; // read next from uart_tx_buf[uart_tx_r % UART_TX_BUF_SIZE]
 
 extern volatile int panicked; // from printf.c
 
 void uartstart();
 
-void
-uartinit(void)
+void uart_init(void)
 {
   // disable interrupts.
   WriteReg(IER, 0x00);
@@ -74,7 +68,7 @@ uartinit(void)
   // enable transmit and receive interrupts.
   WriteReg(IER, IER_TX_ENABLE | IER_RX_ENABLE);
 
-  initlock(&uart_tx_lock, "uart");
+  initlock(&uart_tx_lock);
 }
 
 // add a character to the output buffer and tell the
@@ -180,7 +174,7 @@ uartintr(void)
     int c = uartgetc();
     if(c == -1)
       break;
-    consoleintr(c);
+    console_handle_irq(c);
   }
 
   // send buffered characters.

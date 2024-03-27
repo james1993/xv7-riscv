@@ -1,4 +1,3 @@
-#include "kernel/types.h"
 #include "kernel/stat.h"
 #include "kernel/fcntl.h"
 #include "user/user.h"
@@ -30,10 +29,10 @@ strcmp(const char *p, const char *q)
 {
   while(*p && *p == *q)
     p++, q++;
-  return (uchar)*p - (uchar)*q;
+  return (unsigned char)*p - (unsigned char)*q;
 }
 
-uint
+unsigned int
 strlen(const char *s)
 {
   int n;
@@ -44,7 +43,7 @@ strlen(const char *s)
 }
 
 void*
-memset(void *dst, int c, uint n)
+memset(void *dst, int c, unsigned int n)
 {
   char *cdst = (char *) dst;
   int i;
@@ -127,7 +126,7 @@ memmove(void *vdst, const void *vsrc, int n)
 }
 
 int
-memcmp(const void *s1, const void *s2, uint n)
+memcmp(const void *s1, const void *s2, unsigned int n)
 {
   const char *p1 = s1, *p2 = s2;
   while (n-- > 0) {
@@ -141,7 +140,7 @@ memcmp(const void *s1, const void *s2, uint n)
 }
 
 void *
-memcpy(void *dst, const void *src, uint n)
+memcpy(void *dst, const void *src, unsigned int n)
 {
   return memmove(dst, src, n);
 }

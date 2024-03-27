@@ -1,4 +1,3 @@
-#include "types.h"
 #include "riscv.h"
 #include "defs.h"
 #include "param.h"
@@ -7,7 +6,7 @@
 #include "proc.h"
 #include "pstat.h"
 
-uint64 sys_exit(void)
+unsigned long sys_exit(void)
 {
 	int n;
 
@@ -17,28 +16,28 @@ uint64 sys_exit(void)
 	return 0;  // not reached
 }
 
-uint64 sys_getpid(void)
+unsigned long sys_getpid(void)
 {
 	return myproc()->pid;
 }
 
-uint64 sys_fork(void)
+unsigned long sys_fork(void)
 {
 	return fork();
 }
 
-uint64 sys_wait(void)
+unsigned long sys_wait(void)
 {
-	uint64 p;
+	unsigned long p;
 
 	argaddr(0, &p);
 
 	return wait(p);
 }
 
-uint64 sys_sbrk(void)
+unsigned long sys_sbrk(void)
 {
-	uint64 addr;
+	unsigned long addr;
 	int n;
 
 	argint(0, &n);
@@ -49,10 +48,10 @@ uint64 sys_sbrk(void)
 	return addr;
 }
 
-uint64 sys_sleep(void)
+unsigned long sys_sleep(void)
 {
 	int n;
-	uint ticks0;
+	unsigned int ticks0;
 
 	argint(0, &n);
 	acquire(&tickslock);
@@ -68,7 +67,7 @@ uint64 sys_sleep(void)
 	return 0;
 }
 
-uint64 sys_kill(void)
+unsigned long sys_kill(void)
 {
 	int pid;
 
@@ -78,9 +77,9 @@ uint64 sys_kill(void)
 
 // return how many clock tick interrupts have occurred
 // since start.
-uint64 sys_uptime(void)
+unsigned long sys_uptime(void)
 {
-	uint xticks;
+	unsigned int xticks;
 
 	acquire(&tickslock);
 	xticks = ticks;
@@ -91,9 +90,9 @@ uint64 sys_uptime(void)
 
 // total times processes have called the read() system
 // call
-uint64 sys_readcount(void)
+unsigned long sys_readcount(void)
 {
-	uint xreadcount;
+	unsigned int xreadcount;
 
 	acquire(&readcountlock);
 	xreadcount = readcount;
@@ -103,10 +102,10 @@ uint64 sys_readcount(void)
 }
 
 // after every n ticks of CPU time that the program consumes, call function fn
-uint64 sys_alarm(void)
+unsigned long sys_alarm(void)
 {
 	int n;
-	uint64 fn;
+	unsigned long fn;
 
 	argint(0, &n);
 	argaddr(1, &fn);
@@ -116,7 +115,7 @@ uint64 sys_alarm(void)
 	return 0;
 }
 
-uint64 sys_settickets(int number)
+unsigned long sys_settickets(int number)
 {
 	int n;
 
@@ -129,9 +128,9 @@ uint64 sys_settickets(int number)
 	return 0;
 }
 
-uint64 sys_getpinfo(struct pstat *ps)
+unsigned long sys_getpinfo(struct pstat *ps)
 {
-	uint64 p;
+	unsigned long p;
 	argaddr(0, &p);
 
 	ps = (struct pstat *)p;

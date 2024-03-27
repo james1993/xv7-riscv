@@ -2,7 +2,6 @@
 // kernel stacks, page-table pages,
 // and pipe buffers. Allocates whole 4096-byte pages.
 
-#include "types.h"
 #include "param.h"
 #include "memlayout.h"
 #include "spinlock.h"
@@ -26,7 +25,7 @@ struct {
 void
 kinit()
 {
-  initlock(&kmem.lock, "kmem");
+  initlock(&kmem.lock);
   freerange(end, (void*)PHYSTOP);
 }
 
@@ -34,7 +33,7 @@ void
 freerange(void *pa_start, void *pa_end)
 {
   char *p;
-  p = (char*)PGROUNDUP((uint64)pa_start);
+  p = (char*)PGROUNDUP((unsigned long)pa_start);
   for(; p + PGSIZE <= (char*)pa_end; p += PGSIZE)
     kfree(p);
 }
@@ -48,7 +47,7 @@ kfree(void *pa)
 {
   struct run *r;
 
-  if(((uint64)pa % PGSIZE) != 0 || (char*)pa < end || (uint64)pa >= PHYSTOP)
+  if(((unsigned long)pa % PGSIZE) != 0 || (char*)pa < end || (unsigned long)pa >= PHYSTOP)
     panic("kfree");
 
   // Fill with junk to catch dangling refs.

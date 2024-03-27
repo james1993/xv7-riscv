@@ -1,4 +1,3 @@
-#include "types.h"
 #include "param.h"
 #include "memlayout.h"
 #include "riscv.h"
@@ -11,14 +10,13 @@ void timerinit();
 __attribute__ ((aligned (16))) char stack0[4096 * NCPU];
 
 // a scratch area per CPU for machine-mode timer interrupts.
-uint64 timer_scratch[NCPU][5];
+unsigned long timer_scratch[NCPU][5];
 
 // assembly code in kernelvec.S for machine-mode timer interrupt.
 extern void timervec();
 
 // entry.S jumps here in machine mode on stack0.
-void
-start()
+void start()
 {
   // set M Previous Privilege mode to Supervisor, for mret.
   // AKA when we return from here, return into supervisor mode
@@ -29,7 +27,7 @@ start()
 
   // set M Exception Program Counter to main, for mret.
   // AKA when we return from here, return to main
-  w_mepc((uint64)main);
+  w_mepc((unsigned long)main);
 
   // disable paging for now. probably off by default, but just in case
   w_satp(0);
@@ -53,7 +51,7 @@ start()
   w_tp(r_mhartid());
 
   // machine mode return
-  asm volatile("mret");
+  __asm__ volatile("mret");
 }
 
 // arrange to receive timer interrupts.
@@ -61,15 +59,14 @@ start()
 // at timervec in kernelvec.S,
 // which turns them into software interrupts for
 // devintr() in trap.c.
-void
-timerinit()
+void timerinit()
 {
   // each CPU has a separate source of timer interrupts.
   int id = r_mhartid();
 
   // ask the CLINT for a timer interrupt.
   int interval = 1000000; // cycles; about 1/10th second in qemu.
-  *(uint64*)CLINT_MTIMECMP(id) = *(uint64*)CLINT_MTIME + interval;
+  *(unsigned long*)CLINT_MTIMECMP(id) = *(unsigned long*)CLINT_MTIME + interval;
 
   // prepare information in scratch[] for timervec.
   // scratch[0..2] : space for timervec to save registers.
@@ -77,13 +74,13 @@ timerinit()
   // scratch[4] : desired interval (in cycles) between timer interrupts.
   // gives us ability to save the state and restore it while we execute
   // interrupts
-  uint64 *scratch = &timer_scratch[id][0];
+  unsigned long *scratch = &timer_scratch[id][0];
   scratch[3] = CLINT_MTIMECMP(id);
   scratch[4] = interval;
-  w_mscratch((uint64)scratch);
+  w_mscratch((unsigned long)scratch);
 
   // set the machine-mode trap handler.
-  w_mtvec((uint64)timervec);
+  w_mtvec((unsigned long)timervec);
 
   // enable machine-mode interrupts.
   w_mstatus(r_mstatus() | MSTATUS_MIE);

@@ -1,4 +1,3 @@
-#include "types.h"
 #include "param.h"
 #include "memlayout.h"
 #include "riscv.h"
@@ -8,8 +7,8 @@
 
 struct spinlock tickslock;
 struct spinlock readcountlock;
-uint ticks;
-uint readcount;
+unsigned int ticks;
+unsigned int readcount;
 
 extern char trampoline[], uservec[], userret[];
 
@@ -21,14 +20,14 @@ extern int devintr();
 void
 trapinit(void)
 {
-  initlock(&tickslock, "time");
+  initlock(&tickslock);
 }
 
 // set up to take exceptions and traps while in the kernel.
 void
 trapinithart(void)
 {
-  w_stvec((uint64)kernelvec);
+  w_stvec((unsigned long)kernelvec);
 }
 
 //
@@ -45,7 +44,7 @@ usertrap(void)
 
   // send interrupts and exceptions to kerneltrap(),
   // since we're now in the kernel.
-  w_stvec((uint64)kernelvec);
+  w_stvec((unsigned long)kernelvec);
 
   struct proc *p = myproc();
   
@@ -99,14 +98,14 @@ usertrapret(void)
   intr_off();
 
   // send syscalls, interrupts, and exceptions to uservec in trampoline.S
-  uint64 trampoline_uservec = TRAMPOLINE + (uservec - trampoline);
+  unsigned long trampoline_uservec = TRAMPOLINE + (uservec - trampoline);
   w_stvec(trampoline_uservec);
 
   // set up trapframe values that uservec will need when
   // the process next traps into the kernel.
   p->trapframe->kernel_satp = r_satp();         // kernel page table
   p->trapframe->kernel_sp = p->kstack + PGSIZE; // process's kernel stack
-  p->trapframe->kernel_trap = (uint64)usertrap;
+  p->trapframe->kernel_trap = (unsigned long)usertrap;
   p->trapframe->kernel_hartid = r_tp();         // hartid for cpuid()
 
   // set up the registers that trampoline.S's sret will use
@@ -122,13 +121,13 @@ usertrapret(void)
   w_sepc(p->trapframe->epc);
 
   // tell trampoline.S the user page table to switch to.
-  uint64 satp = MAKE_SATP(p->pagetable);
+  unsigned long satp = MAKE_SATP(p->pagetable);
 
   // jump to userret in trampoline.S at the top of memory, which 
   // switches to the user page table, restores user registers,
   // and switches to user mode with sret.
-  uint64 trampoline_userret = TRAMPOLINE + (userret - trampoline);
-  ((void (*)(uint64))trampoline_userret)(satp);
+  unsigned long trampoline_userret = TRAMPOLINE + (userret - trampoline);
+  ((void (*)(unsigned long))trampoline_userret)(satp);
 }
 
 // interrupts and exceptions from kernel code go here via kernelvec,
@@ -137,9 +136,9 @@ void
 kerneltrap()
 {
   int which_dev = 0;
-  uint64 sepc = r_sepc();
-  uint64 sstatus = r_sstatus();
-  uint64 scause = r_scause();
+  unsigned long sepc = r_sepc();
+  unsigned long sstatus = r_sstatus();
+  unsigned long scause = r_scause();
   
   if((sstatus & SSTATUS_SPP) == 0)
     panic("kerneltrap: not from supervisor mode");
@@ -179,7 +178,7 @@ clockintr()
 int
 devintr()
 {
-  uint64 scause = r_scause();
+  unsigned long scause = r_scause();
 
   if((scause & 0x8000000000000000L) &&
      (scause & 0xff) == 9){

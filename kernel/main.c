@@ -1,4 +1,3 @@
-#include "types.h"
 #include "param.h"
 #include "memlayout.h"
 #include "riscv.h"
@@ -7,15 +6,12 @@
 volatile static int started = 0;
 
 // start() jumps here in supervisor mode on all CPUs.
-void
-main()
+void main()
 {
   if(cpuid() == 0){
-    consoleinit();
+    console_init();
     printfinit();
-    printf("\n");
-    printf("xv6 kernel is booting\n");
-    printf("\n");
+    printf("\nxv7 kernel is booting\n\n");
     kinit();         // physical page allocator
     kvminit();       // create kernel page table
     kvminithart();   // turn on paging

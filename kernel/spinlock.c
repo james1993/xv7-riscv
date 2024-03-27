@@ -1,6 +1,5 @@
 // Mutual exclusion spin locks.
 
-#include "types.h"
 #include "param.h"
 #include "memlayout.h"
 #include "spinlock.h"
@@ -9,9 +8,8 @@
 #include "defs.h"
 
 void
-initlock(struct spinlock *lk, char *name)
+initlock(struct spinlock *lk)
 {
-  lk->name = name;
   lk->locked = 0;
   lk->cpu = 0;
 }

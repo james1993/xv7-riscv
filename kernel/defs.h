@@ -12,16 +12,16 @@ struct pstat;
 
 // bio.c
 void            binit(void);
-struct buf*     bread(uint, uint);
+struct buf*     bread(unsigned int, unsigned int);
 void            brelse(struct buf*);
 void            bwrite(struct buf*);
 void            bpin(struct buf*);
 void            bunpin(struct buf*);
 
 // console.c
-void            consoleinit(void);
-void            consoleintr(int);
-void            consputc(int);
+void            console_init(void);
+void            console_handle_irq(int);
+void            console_put(int);
 
 // exec.c
 int             exec(char*, char**);
@@ -31,15 +31,15 @@ struct file*    filealloc(void);
 void            fileclose(struct file*);
 struct file*    filedup(struct file*);
 void            fileinit(void);
-int             fileread(struct file*, uint64, int n);
-int             filestat(struct file*, uint64 addr);
-int             filewrite(struct file*, uint64, int n);
+int             fileread(struct file*, unsigned long, int n);
+int             filestat(struct file*, unsigned long addr);
+int             filewrite(struct file*, unsigned long, int n);
 
 // fs.c
 void            fsinit(int);
-int             dirlink(struct inode*, char*, uint);
-struct inode*   dirlookup(struct inode*, char*, uint*);
-struct inode*   ialloc(uint, short);
+int             dirlink(struct inode*, char*, unsigned int);
+struct inode*   dirlookup(struct inode*, char*, unsigned int*);
+struct inode*   ialloc(unsigned int, short);
 struct inode*   idup(struct inode*);
 void            iinit();
 void            ilock(struct inode*);
@@ -50,9 +50,9 @@ void            iupdate(struct inode*);
 int             namecmp(const char*, const char*);
 struct inode*   namei(char*);
 struct inode*   nameiparent(char*, char*);
-int             readi(struct inode*, int, uint64, uint, uint);
+int             readi(struct inode*, int, unsigned long, unsigned int, unsigned int);
 void            stati(struct inode*, struct stat*);
-int             writei(struct inode*, int, uint64, uint, uint);
+int             writei(struct inode*, bool, unsigned long, unsigned int, unsigned int);
 void            itrunc(struct inode*);
 
 // ramdisk.c
@@ -74,8 +74,8 @@ void            end_op(void);
 // pipe.c
 int             pipealloc(struct file**, struct file**);
 void            pipeclose(struct pipe*, int);
-int             piperead(struct pipe*, uint64, int);
-int             pipewrite(struct pipe*, uint64, int);
+int             piperead(struct pipe*, unsigned long, int);
+int             pipewrite(struct pipe*, unsigned long, int);
 
 // printf.c
 void            printf(char*, ...);
@@ -89,7 +89,7 @@ int             fork(void);
 int             growproc(int);
 void            proc_mapstacks(pagetable_t);
 pagetable_t     proc_pagetable(struct proc *);
-void            proc_freepagetable(pagetable_t, uint64);
+void            proc_freepagetable(pagetable_t, unsigned long);
 int             kill(int);
 int             killed(struct proc*);
 void            setkilled(struct proc*);
@@ -101,11 +101,11 @@ void            scheduler(void) __attribute__((noreturn));
 void            sched(void);
 void            sleep(void*, struct spinlock*);
 void            userinit(void);
-int             wait(uint64);
+int             wait(unsigned long);
 void            wakeup(void*);
 void            yield(void);
-int             either_copyout(int user_dst, uint64 dst, void *src, uint64 len);
-int             either_copyin(void *dst, int user_src, uint64 src, uint64 len);
+int             either_copyout(bool user_dst, unsigned long dst, void *src, unsigned long len);
+int             either_copyin(void *dst, bool user_src, unsigned long src, unsigned long len);
 void            procdump(void);
 void            procinfo(struct pstat *);
 
@@ -115,7 +115,7 @@ void            swtch(struct context*, struct context*);
 // spinlock.c
 void            acquire(struct spinlock*);
 int             holding(struct spinlock*);
-void            initlock(struct spinlock*, char*);
+void            initlock(struct spinlock*);
 void            release(struct spinlock*);
 void            push_off(void);
 void            pop_off(void);
@@ -124,28 +124,28 @@ void            pop_off(void);
 void            acquiresleep(struct sleeplock*);
 void            releasesleep(struct sleeplock*);
 int             holdingsleep(struct sleeplock*);
-void            initsleeplock(struct sleeplock*, char*);
+void            initsleeplock(struct sleeplock*);
 
 // string.c
-int             memcmp(const void*, const void*, uint);
-void*           memmove(void*, const void*, uint);
-void*           memset(void*, int, uint);
+int             memcmp(const void*, const void*, unsigned int);
+void*           memmove(void*, const void*, unsigned int);
+void*           memset(void*, int, unsigned int);
 char*           safestrcpy(char*, const char*, int);
 int             strlen(const char*);
-int             strncmp(const char*, const char*, uint);
+int             strncmp(const char*, const char*, unsigned int);
 char*           strncpy(char*, const char*, int);
 
 // syscall.c
 void            argint(int, int*);
 int             argstr(int, char*, int);
-void            argaddr(int, uint64 *);
-int             fetchstr(uint64, char*, int);
-int             fetchaddr(uint64, uint64*);
+void            argaddr(int, unsigned long *);
+int             fetchstr(unsigned long, char*, int);
+int             fetchaddr(unsigned long, unsigned long*);
 void            syscall();
 
 // trap.c
-extern uint     ticks;
-extern uint     readcount;
+extern unsigned int     ticks;
+extern unsigned int     readcount;
 void            trapinit(void);
 void            trapinithart(void);
 extern struct spinlock tickslock;
@@ -153,7 +153,7 @@ extern struct spinlock readcountlock;
 void            usertrapret(void);
 
 // uart.c
-void            uartinit(void);
+void            uart_init(void);
 void            uartintr(void);
 void            uartputc(int);
 void            uartputc_sync(int);
@@ -162,21 +162,21 @@ int             uartgetc(void);
 // vm.c
 void            kvminit(void);
 void            kvminithart(void);
-void            kvmmap(pagetable_t, uint64, uint64, uint64, int);
-int             mappages(pagetable_t, uint64, uint64, uint64, int);
+void            kvmmap(pagetable_t, unsigned long, unsigned long, unsigned long, int);
+int             mappages(pagetable_t, unsigned long, unsigned long, unsigned long, int);
 pagetable_t     uvmcreate(void);
-void            uvmfirst(pagetable_t, uchar *, uint);
-uint64          uvmalloc(pagetable_t, uint64, uint64, int);
-uint64          uvmdealloc(pagetable_t, uint64, uint64);
-int             uvmcopy(pagetable_t, pagetable_t, uint64);
-void            uvmfree(pagetable_t, uint64);
-void            uvmunmap(pagetable_t, uint64, uint64, int);
-void            uvmclear(pagetable_t, uint64);
-pte_t *         walk(pagetable_t, uint64, int);
-uint64          walkaddr(pagetable_t, uint64);
-int             copyout(pagetable_t, uint64, char *, uint64);
-int             copyin(pagetable_t, char *, uint64, uint64);
-int             copyinstr(pagetable_t, char *, uint64, uint64);
+void            uvmfirst(pagetable_t, unsigned char *, unsigned int);
+unsigned long          uvmalloc(pagetable_t, unsigned long, unsigned long, int);
+unsigned long          uvmdealloc(pagetable_t, unsigned long, unsigned long);
+int             uvmcopy(pagetable_t, pagetable_t, unsigned long);
+void            uvmfree(pagetable_t, unsigned long);
+void            uvmunmap(pagetable_t, unsigned long, unsigned long, int);
+void            uvmclear(pagetable_t, unsigned long);
+pte_t *         walk(pagetable_t, unsigned long, int);
+unsigned long          walkaddr(pagetable_t, unsigned long);
+int             copy_to_user(pagetable_t, unsigned long, char *, unsigned long);
+int             copy_from_user(pagetable_t, char *, unsigned long, unsigned long);
+int             copyinstr(pagetable_t, char *, unsigned long, unsigned long);
 
 // plic.c
 void            plicinit(void);
