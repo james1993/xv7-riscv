@@ -47,7 +47,7 @@ struct log {
 };
 struct log log;
 
-static void recover_from_log(void);
+static void recover_from_log();
 static void commit();
 
 void
@@ -74,7 +74,7 @@ install_trans(int recovering)
     struct buf *dbuf = bread(log.dev, log.lh.block[tail]); // read dst
     memmove(dbuf->data, lbuf->data, BSIZE);  // copy block to dst
     bwrite(dbuf);  // write dst to disk
-    if(recovering == 0)
+    if (recovering == 0)
       bunpin(dbuf);
     brelse(lbuf);
     brelse(dbuf);
@@ -83,7 +83,7 @@ install_trans(int recovering)
 
 // Read the log header from disk into the in-memory log header
 static void
-read_head(void)
+read_head()
 {
   struct buf *buf = bread(log.dev, log.start);
   struct logheader *lh = (struct logheader *) (buf->data);
@@ -99,7 +99,7 @@ read_head(void)
 // This is the true point at which the
 // current transaction commits.
 static void
-write_head(void)
+write_head()
 {
   struct buf *buf = bread(log.dev, log.start);
   struct logheader *hb = (struct logheader *) (buf->data);
@@ -113,7 +113,7 @@ write_head(void)
 }
 
 static void
-recover_from_log(void)
+recover_from_log()
 {
   read_head();
   install_trans(1); // if committed, copy from log to disk
@@ -123,13 +123,13 @@ recover_from_log(void)
 
 // called at the start of each FS system call.
 void
-begin_op(void)
+begin_op()
 {
   acquire(&log.lock);
-  while(1){
-    if(log.committing){
+  while (1) {
+    if (log.committing) {
       sleep(&log, &log.lock);
-    } else if(log.lh.n + (log.outstanding+1)*MAXOPBLOCKS > LOGSIZE){
+    } else if (log.lh.n + (log.outstanding+1)*MAXOPBLOCKS > LOGSIZE) {
       // this op might exhaust log space; wait for commit.
       sleep(&log, &log.lock);
     } else {
@@ -143,15 +143,15 @@ begin_op(void)
 // called at the end of each FS system call.
 // commits if this was the last outstanding operation.
 void
-end_op(void)
+end_op()
 {
   int do_commit = 0;
 
   acquire(&log.lock);
   log.outstanding -= 1;
-  if(log.committing)
+  if (log.committing)
     panic("log.committing");
-  if(log.outstanding == 0){
+  if (log.outstanding == 0) {
     do_commit = 1;
     log.committing = 1;
   } else {
@@ -162,7 +162,7 @@ end_op(void)
   }
   release(&log.lock);
 
-  if(do_commit){
+  if (do_commit) {
     // call commit w/o holding locks, since not allowed
     // to sleep with locks.
     commit();
@@ -175,7 +175,7 @@ end_op(void)
 
 // Copy modified blocks from cache to log.
 static void
-write_log(void)
+write_log()
 {
   int tail;
 

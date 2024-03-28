@@ -15,8 +15,8 @@
 #include "proc.h"
 
 #define BACKSPACE 0x100
-#define INPUT_BUF_SIZE 1024
-#define C(x)  ((x)-'@')  // Control-x
+#define INPUT_BUF_SIZE  1024
+#define C(x)  ((x)-'@')  /* "Control-x" */
 
 struct console {
   struct spinlock lock;
@@ -29,22 +29,20 @@ struct console {
 static struct console console;
 
 /*
- * For printf() and user echoes.
- * Doesn't block.
+ * For printf() and prints to screen. Doesn't block.
  */
 void console_put(int c)
 {
-  if (c == BACKSPACE) {
+  if (c == BACKSPACE) { 
     /* Overwrite with a space. */
-    uartputc_sync('\b'); uartputc_sync(' '); uartputc_sync('\b');
+    uart_put_sync('\b'); uart_put_sync(' '); uart_put_sync('\b');
   } else {
-    uartputc_sync(c);
+    uart_put_sync(c);
   }
 }
 
 /*
- * For user write()s.
- * Blocks, so can't call from interrupts.
+ * For user write()s. Blocks.
  * Returns the number of bytes written.
  */
 static int console_write(unsigned long src, int n)
@@ -56,7 +54,7 @@ static int console_write(unsigned long src, int n)
     if (copy_from_user(myproc()->pagetable, &c, src + i, sizeof(char)))
       break;
 
-    uartputc(c);
+    uart_put(c);
   }
 
   return i;
@@ -64,7 +62,7 @@ static int console_write(unsigned long src, int n)
 
 /*
  * For user read()s from the console.
- * Returns number of bytes read.
+ * Returns number of bytes read, or -1 on error.
  */
 static int console_read(unsigned long dst, int n)
 {
@@ -103,7 +101,7 @@ static int console_read(unsigned long dst, int n)
 
 /*
  * The console input interrupt handler.
- * uartintr() calls this for input characters.
+ * handle_uart_irq() calls this for input characters.
  * Do backspace processing, append to console.buf,
  * wake up console_read() if a whole line has arrived.
  */
@@ -133,7 +131,7 @@ void console_handle_irq(int c)
       /* store for consumption later by console_read(). */
       console.buf[console.edit_index++ % INPUT_BUF_SIZE] = c;
 
-      if(c == '\n' || console.edit_index-console.read_index == INPUT_BUF_SIZE){
+      if (c == '\n' || console.edit_index-console.read_index == INPUT_BUF_SIZE) {
         /* Enter pressed, wakeup console_read */
         console.write_index = console.edit_index;
         wakeup(&console.read_index);

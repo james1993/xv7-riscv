@@ -34,7 +34,7 @@ freerange(void *pa_start, void *pa_end)
 {
   char *p;
   p = (char*)PGROUNDUP((unsigned long)pa_start);
-  for(; p + PGSIZE <= (char*)pa_end; p += PGSIZE)
+  for (; p + PGSIZE <= (char*)pa_end; p += PGSIZE)
     kfree(p);
 }
 
@@ -47,7 +47,7 @@ kfree(void *pa)
 {
   struct run *r;
 
-  if(((unsigned long)pa % PGSIZE) != 0 || (char*)pa < end || (unsigned long)pa >= PHYSTOP)
+  if (((unsigned long)pa % PGSIZE) != 0 || (char*)pa < end || (unsigned long)pa >= PHYSTOP)
     panic("kfree");
 
   // Fill with junk to catch dangling refs.
@@ -65,17 +65,17 @@ kfree(void *pa)
 // Returns a pointer that the kernel can use.
 // Returns 0 if the memory cannot be allocated.
 void *
-kalloc(void)
+kalloc()
 {
   struct run *r;
 
   acquire(&kmem.lock);
   r = kmem.freelist;
-  if(r)
+  if (r)
     kmem.freelist = r->next;
   release(&kmem.lock);
 
-  if(r)
+  if (r)
     memset((char*)r, 5, PGSIZE); // fill with junk
   return (void*)r;
 }

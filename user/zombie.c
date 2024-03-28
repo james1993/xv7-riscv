@@ -5,9 +5,9 @@
 #include "user/user.h"
 
 int
-main(void)
+main()
 {
-  if(fork() > 0)
+  if (fork() > 0)
     sleep(5);  // Let child exit before parent.
   exit(0);
 }

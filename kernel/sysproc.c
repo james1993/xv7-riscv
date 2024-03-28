@@ -6,7 +6,7 @@
 #include "proc.h"
 #include "pstat.h"
 
-unsigned long sys_exit(void)
+unsigned long sys_exit()
 {
 	int n;
 
@@ -16,17 +16,17 @@ unsigned long sys_exit(void)
 	return 0;  // not reached
 }
 
-unsigned long sys_getpid(void)
+unsigned long sys_getpid()
 {
 	return myproc()->pid;
 }
 
-unsigned long sys_fork(void)
+unsigned long sys_fork()
 {
 	return fork();
 }
 
-unsigned long sys_wait(void)
+unsigned long sys_wait()
 {
 	unsigned long p;
 
@@ -35,7 +35,7 @@ unsigned long sys_wait(void)
 	return wait(p);
 }
 
-unsigned long sys_sbrk(void)
+unsigned long sys_sbrk()
 {
 	unsigned long addr;
 	int n;
@@ -48,7 +48,7 @@ unsigned long sys_sbrk(void)
 	return addr;
 }
 
-unsigned long sys_sleep(void)
+unsigned long sys_sleep()
 {
 	int n;
 	unsigned int ticks0;
@@ -67,7 +67,7 @@ unsigned long sys_sleep(void)
 	return 0;
 }
 
-unsigned long sys_kill(void)
+unsigned long sys_kill()
 {
 	int pid;
 
@@ -77,7 +77,7 @@ unsigned long sys_kill(void)
 
 // return how many clock tick interrupts have occurred
 // since start.
-unsigned long sys_uptime(void)
+unsigned long sys_uptime()
 {
 	unsigned int xticks;
 
@@ -90,7 +90,7 @@ unsigned long sys_uptime(void)
 
 // total times processes have called the read() system
 // call
-unsigned long sys_readcount(void)
+unsigned long sys_readcount()
 {
 	unsigned int xreadcount;
 
@@ -102,7 +102,7 @@ unsigned long sys_readcount(void)
 }
 
 // after every n ticks of CPU time that the program consumes, call function fn
-unsigned long sys_alarm(void)
+unsigned long sys_alarm()
 {
 	int n;
 	unsigned long fn;
@@ -110,7 +110,7 @@ unsigned long sys_alarm(void)
 	argint(0, &n);
 	argaddr(1, &fn);
 	myproc()->alarmticks = n;
-	myproc()->alarmhandler = (void (*)(void))fn;
+	myproc()->alarmhandler = (void (*)())fn;
 
 	return 0;
 }

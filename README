@@ -3,9 +3,9 @@ Version 6 implemented for a modern RISC-V multiprocessor using ANSI C.
 
 Refactoring Changes:
 - Ported to "2x" C standard
-- Extensive error handling throughout
-- Better function names
-- Comments throughout.
+- Coding style follows mainline Linux
+- Better variable naming which removes the need for so many comments
+- More consistent design of files w.r.t. structs
 
 On top of refactoring, this repository adds the following features:
 - Lottery scheduler for processes (done)

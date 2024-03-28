@@ -8,7 +8,7 @@
 //
 
 void
-plicinit(void)
+plicinit()
 {
   // set desired IRQ priorities non-zero (otherwise disabled).
   *(unsigned int*)(PLIC + UART0_IRQ*4) = 1;
@@ -16,7 +16,7 @@ plicinit(void)
 }
 
 void
-plicinithart(void)
+plicinithart()
 {
   int hart = cpuid();
   
@@ -30,7 +30,7 @@ plicinithart(void)
 
 // ask the PLIC what interrupt we should serve.
 int
-plic_claim(void)
+plic_claim()
 {
   int hart = cpuid();
   int irq = *(unsigned int*)PLIC_SCLAIM(hart);

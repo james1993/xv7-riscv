@@ -12,7 +12,7 @@
 #include "buf.h"
 
 void
-ramdiskinit(void)
+ramdiskinit()
 {
 }
 
@@ -21,18 +21,18 @@ ramdiskinit(void)
 void
 ramdiskrw(struct buf *b)
 {
-  if(!holdingsleep(&b->lock))
+  if (!holdingsleep(&b->lock))
     panic("ramdiskrw: buf not locked");
-  if((b->flags & (B_VALID|B_DIRTY)) == B_VALID)
+  if ((b->flags & (B_VALID|B_DIRTY)) == B_VALID)
     panic("ramdiskrw: nothing to do");
 
-  if(b->blockno >= FSSIZE)
+  if (b->blockno >= FSSIZE)
     panic("ramdiskrw: blockno too big");
 
   unsigned long diskaddr = b->blockno * BSIZE;
   char *addr = (char *)RAMDISK + diskaddr;
 
-  if(b->flags & B_DIRTY){
+  if (b->flags & B_DIRTY) {
     // write
     memmove(addr, b->data, BSIZE);
     b->flags &= ~B_DIRTY;

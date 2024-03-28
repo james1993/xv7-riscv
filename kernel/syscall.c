@@ -11,9 +11,9 @@ int
 fetchaddr(unsigned long addr, unsigned long *ip)
 {
   struct proc *p = myproc();
-  if(addr >= p->sz || addr+sizeof(unsigned long) > p->sz || addr == 0) // both tests needed, in case of overflow
+  if (addr >= p->sz || addr+sizeof(unsigned long) > p->sz || addr == 0) // both tests needed, in case of overflow
     return -1;
-  if(copy_from_user(p->pagetable, (char *)ip, addr, sizeof(*ip)) != 0)
+  if (copy_from_user(p->pagetable, (char *)ip, addr, sizeof(*ip)) != 0)
     return -1;
   return 0;
 }
@@ -24,7 +24,7 @@ int
 fetchstr(unsigned long addr, char *buf, int max)
 {
   struct proc *p = myproc();
-  if(copyinstr(p->pagetable, buf, addr, max) < 0)
+  if (copyinstr(p->pagetable, buf, addr, max) < 0)
     return -1;
   return strlen(buf);
 }
@@ -77,35 +77,35 @@ argstr(int n, char *buf, int max)
 }
 
 // Prototypes for the functions that handle system calls.
-extern unsigned long sys_fork(void);
-extern unsigned long sys_exit(void);
-extern unsigned long sys_wait(void);
-extern unsigned long sys_pipe(void);
-extern unsigned long sys_read(void);
-extern unsigned long sys_kill(void);
-extern unsigned long sys_exec(void);
-extern unsigned long sys_fstat(void);
-extern unsigned long sys_chdir(void);
-extern unsigned long sys_dup(void);
-extern unsigned long sys_getpid(void);
-extern unsigned long sys_sbrk(void);
-extern unsigned long sys_sleep(void);
-extern unsigned long sys_uptime(void);
-extern unsigned long sys_open(void);
-extern unsigned long sys_write(void);
-extern unsigned long sys_mknod(void);
-extern unsigned long sys_unlink(void);
-extern unsigned long sys_link(void);
-extern unsigned long sys_mkdir(void);
-extern unsigned long sys_close(void);
-extern unsigned long sys_readcount(void);
-extern unsigned long sys_alarm(void);
-extern unsigned long sys_settickets(void);
-extern unsigned long sys_getpinfo(void);
+extern unsigned long sys_fork();
+extern unsigned long sys_exit();
+extern unsigned long sys_wait();
+extern unsigned long sys_pipe();
+extern unsigned long sys_read();
+extern unsigned long sys_kill();
+extern unsigned long sys_exec();
+extern unsigned long sys_fstat();
+extern unsigned long sys_chdir();
+extern unsigned long sys_dup();
+extern unsigned long sys_getpid();
+extern unsigned long sys_sbrk();
+extern unsigned long sys_sleep();
+extern unsigned long sys_uptime();
+extern unsigned long sys_open();
+extern unsigned long sys_write();
+extern unsigned long sys_mknod();
+extern unsigned long sys_unlink();
+extern unsigned long sys_link();
+extern unsigned long sys_mkdir();
+extern unsigned long sys_close();
+extern unsigned long sys_readcount();
+extern unsigned long sys_alarm();
+extern unsigned long sys_settickets();
+extern unsigned long sys_getpinfo();
 
 // An array mapping syscall numbers from syscall.h
 // to the function that handles the system call.
-static unsigned long (*syscalls[])(void) = {
+static unsigned long (*syscalls[])() = {
 [SYS_fork]	sys_fork,
 [SYS_exit]	sys_exit,
 [SYS_wait]	sys_wait,
@@ -164,13 +164,13 @@ static char *syscall_names[] = {
 #endif
 
 void
-syscall(void)
+syscall()
 {
   int num;
   struct proc *p = myproc();
 
   num = p->trapframe->a7;
-  if(num > 0 && num < NELEM(syscalls) && syscalls[num]) {
+  if (num > 0 && num < NELEM(syscalls) && syscalls[num]) {
     // Use num to lookup the system call function for num, call it,
     // and store its return value in p->trapframe->a0
     p->trapframe->a0 = syscalls[num]();

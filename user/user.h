@@ -1,7 +1,7 @@
 struct stat;
 
 // system calls
-int fork(void);
+int fork();
 int exit(int) __attribute__((noreturn));
 int wait(int*);
 int pipe(int*);
@@ -18,11 +18,11 @@ int link(const char*, const char*);
 int mkdir(const char*);
 int chdir(const char*);
 int dup(int);
-int getpid(void);
+int getpid();
 char* sbrk(int);
 int sleep(int);
-int uptime(void);
-int readcount(void);
+int uptime();
+int readcount();
 int alarm(int ticks, void (*handler)());
 
 // ulib.c

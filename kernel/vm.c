@@ -16,7 +16,7 @@ extern char trampoline[]; // trampoline.S
 
 // Make a direct-map page table for the kernel.
 pagetable_t
-kvmmake(void)
+kvmmake()
 {
   pagetable_t kpgtbl;
 
@@ -50,7 +50,7 @@ kvmmake(void)
 
 // Initialize the one kernel_pagetable
 void
-kvminit(void)
+kvminit()
 {
   kernel_pagetable = kvmmake();
 }
@@ -84,15 +84,15 @@ kvminithart()
 pte_t *
 walk(pagetable_t pagetable, unsigned long va, int alloc)
 {
-  if(va >= MAXVA)
+  if (va >= MAXVA)
     panic("walk");
 
-  for(int level = 2; level > 0; level--) {
+  for (int level = 2; level > 0; level--) {
     pte_t *pte = &pagetable[PX(level, va)];
-    if(*pte & PTE_V) {
+    if (*pte & PTE_V) {
       pagetable = (pagetable_t)PTE2PA(*pte);
     } else {
-      if(!alloc || (pagetable = (unsigned long *)kalloc()) == 0)
+      if (!alloc || (pagetable = (unsigned long *)kalloc()) == 0)
         return 0;
       memset(pagetable, 0, PGSIZE);
       *pte = PA2PTE(pagetable) | PTE_V;
@@ -110,15 +110,15 @@ walkaddr(pagetable_t pagetable, unsigned long va)
   pte_t *pte;
   unsigned long pa;
 
-  if(va >= MAXVA)
+  if (va >= MAXVA)
     return 0;
 
   pte = walk(pagetable, va, 0);
-  if(pte == 0)
+  if (pte == 0)
     return 0;
-  if((*pte & PTE_V) == 0)
+  if ((*pte & PTE_V) == 0)
     return 0;
-  if((*pte & PTE_U) == 0)
+  if ((*pte & PTE_U) == 0)
     return 0;
   pa = PTE2PA(*pte);
   return pa;
@@ -130,7 +130,7 @@ walkaddr(pagetable_t pagetable, unsigned long va)
 void
 kvmmap(pagetable_t kpgtbl, unsigned long va, unsigned long pa, unsigned long sz, int perm)
 {
-  if(mappages(kpgtbl, va, sz, pa, perm) != 0)
+  if (mappages(kpgtbl, va, sz, pa, perm) != 0)
     panic("kvmmap");
 }
 
@@ -144,18 +144,18 @@ mappages(pagetable_t pagetable, unsigned long va, unsigned long size, unsigned l
   unsigned long a, last;
   pte_t *pte;
 
-  if(size == 0)
+  if (size == 0)
     panic("mappages: size");
   
   a = PGROUNDDOWN(va);
   last = PGROUNDDOWN(va + size - 1);
-  for(;;){
-    if((pte = walk(pagetable, a, 1)) == 0)
+  for (;;) {
+    if ((pte = walk(pagetable, a, 1)) == 0)
       return -1;
-    if(*pte & PTE_V)
+    if (*pte & PTE_V)
       panic("mappages: remap");
     *pte = PA2PTE(pa) | perm | PTE_V;
-    if(a == last)
+    if (a == last)
       break;
     a += PGSIZE;
     pa += PGSIZE;
@@ -172,17 +172,17 @@ uvmunmap(pagetable_t pagetable, unsigned long va, unsigned long npages, int do_f
   unsigned long a;
   pte_t *pte;
 
-  if((va % PGSIZE) != 0)
+  if ((va % PGSIZE) != 0)
     panic("uvmunmap: not aligned");
 
-  for(a = va; a < va + npages*PGSIZE; a += PGSIZE){
-    if((pte = walk(pagetable, a, 0)) == 0)
+  for (a = va; a < va + npages*PGSIZE; a += PGSIZE) {
+    if ((pte = walk(pagetable, a, 0)) == 0)
       panic("uvmunmap: walk");
-    if((*pte & PTE_V) == 0)
+    if ((*pte & PTE_V) == 0)
       panic("uvmunmap: not mapped");
-    if(PTE_FLAGS(*pte) == PTE_V)
+    if (PTE_FLAGS(*pte) == PTE_V)
       panic("uvmunmap: not a leaf");
-    if(do_free){
+    if (do_free) {
       unsigned long pa = PTE2PA(*pte);
       kfree((void*)pa);
     }
@@ -197,7 +197,7 @@ uvmcreate()
 {
   pagetable_t pagetable;
   pagetable = (pagetable_t) kalloc();
-  if(pagetable == 0)
+  if (pagetable == 0)
     return 0;
   memset(pagetable, 0, PGSIZE);
   return pagetable;
@@ -211,7 +211,7 @@ uvmfirst(pagetable_t pagetable, unsigned char *src, unsigned int sz)
 {
   char *mem;
 
-  if(sz >= PGSIZE)
+  if (sz >= PGSIZE)
     panic("uvmfirst: more than a page");
   mem = kalloc();
   memset(mem, 0, PGSIZE);
@@ -227,18 +227,18 @@ uvmalloc(pagetable_t pagetable, unsigned long oldsz, unsigned long newsz, int xp
   char *mem;
   unsigned long a;
 
-  if(newsz < oldsz)
+  if (newsz < oldsz)
     return oldsz;
 
   oldsz = PGROUNDUP(oldsz);
-  for(a = oldsz; a < newsz; a += PGSIZE){
+  for (a = oldsz; a < newsz; a += PGSIZE) {
     mem = kalloc();
-    if(mem == 0){
+    if (mem == 0) {
       uvmdealloc(pagetable, a, oldsz);
       return 0;
     }
     memset(mem, 0, PGSIZE);
-    if(mappages(pagetable, a, PGSIZE, (unsigned long)mem, PTE_R|PTE_U|xperm) != 0){
+    if (mappages(pagetable, a, PGSIZE, (unsigned long)mem, PTE_R|PTE_U|xperm) != 0) {
       kfree(mem);
       uvmdealloc(pagetable, a, oldsz);
       return 0;
@@ -254,10 +254,10 @@ uvmalloc(pagetable_t pagetable, unsigned long oldsz, unsigned long newsz, int xp
 unsigned long
 uvmdealloc(pagetable_t pagetable, unsigned long oldsz, unsigned long newsz)
 {
-  if(newsz >= oldsz)
+  if (newsz >= oldsz)
     return oldsz;
 
-  if(PGROUNDUP(newsz) < PGROUNDUP(oldsz)){
+  if (PGROUNDUP(newsz) < PGROUNDUP(oldsz)) {
     int npages = (PGROUNDUP(oldsz) - PGROUNDUP(newsz)) / PGSIZE;
     uvmunmap(pagetable, PGROUNDUP(newsz), npages, 1);
   }
@@ -271,14 +271,14 @@ void
 freewalk(pagetable_t pagetable)
 {
   // there are 2^9 = 512 PTEs in a page table.
-  for(int i = 0; i < 512; i++){
+  for (int i = 0; i < 512; i++) {
     pte_t pte = pagetable[i];
-    if((pte & PTE_V) && (pte & (PTE_R|PTE_W|PTE_X)) == 0){
+    if ((pte & PTE_V) && (pte & (PTE_R|PTE_W|PTE_X)) == 0) {
       // this PTE points to a lower-level page table.
       unsigned long child = PTE2PA(pte);
       freewalk((pagetable_t)child);
       pagetable[i] = 0;
-    } else if(pte & PTE_V){
+    } else if (pte & PTE_V) {
       panic("freewalk: leaf");
     }
   }
@@ -290,7 +290,7 @@ freewalk(pagetable_t pagetable)
 void
 uvmfree(pagetable_t pagetable, unsigned long sz)
 {
-  if(sz > 0)
+  if (sz > 0)
     uvmunmap(pagetable, 0, PGROUNDUP(sz)/PGSIZE, 1);
   freewalk(pagetable);
 }
@@ -309,17 +309,17 @@ uvmcopy(pagetable_t old, pagetable_t new, unsigned long sz)
   unsigned int flags;
   char *mem;
 
-  for(i = 0; i < sz; i += PGSIZE){
-    if((pte = walk(old, i, 0)) == 0)
+  for (i = 0; i < sz; i += PGSIZE) {
+    if ((pte = walk(old, i, 0)) == 0)
       panic("uvmcopy: pte should exist");
-    if((*pte & PTE_V) == 0)
+    if ((*pte & PTE_V) == 0)
       panic("uvmcopy: page not present");
     pa = PTE2PA(*pte);
     flags = PTE_FLAGS(*pte);
-    if((mem = kalloc()) == 0)
+    if ((mem = kalloc()) == 0)
       goto err;
     memmove(mem, (char*)pa, PGSIZE);
-    if(mappages(new, i, PGSIZE, (unsigned long)mem, flags) != 0){
+    if (mappages(new, i, PGSIZE, (unsigned long)mem, flags) != 0) {
       kfree(mem);
       goto err;
     }
@@ -339,7 +339,7 @@ uvmclear(pagetable_t pagetable, unsigned long va)
   pte_t *pte;
   
   pte = walk(pagetable, va, 0);
-  if(pte == 0)
+  if (pte == 0)
     panic("uvmclear");
   *pte &= ~PTE_U;
 }
@@ -352,13 +352,13 @@ copy_to_user(pagetable_t pagetable, unsigned long dstva, char *src, unsigned lon
 {
   unsigned long n, va0, pa0;
 
-  while(len > 0){
+  while (len > 0) {
     va0 = PGROUNDDOWN(dstva);
     pa0 = walkaddr(pagetable, va0);
-    if(pa0 == 0)
+    if (pa0 == 0)
       return -1;
     n = PGSIZE - (dstva - va0);
-    if(n > len)
+    if (n > len)
       n = len;
     memmove((void *)(pa0 + (dstva - va0)), src, n);
 
@@ -375,13 +375,13 @@ int copy_from_user(pagetable_t pagetable, char *dst, unsigned long srcva, unsign
 {
   unsigned long n, va0, pa0;
 
-  while(len > 0){
+  while (len > 0) {
     va0 = PGROUNDDOWN(srcva);
     pa0 = walkaddr(pagetable, va0);
-    if(pa0 == 0)
+    if (pa0 == 0)
       return -1;
     n = PGSIZE - (srcva - va0);
-    if(n > len)
+    if (n > len)
       n = len;
     memmove(dst, (void *)(pa0 + (srcva - va0)), n);
 
@@ -402,18 +402,18 @@ copyinstr(pagetable_t pagetable, char *dst, unsigned long srcva, unsigned long m
   unsigned long n, va0, pa0;
   int got_null = 0;
 
-  while(got_null == 0 && max > 0){
+  while (got_null == 0 && max > 0) {
     va0 = PGROUNDDOWN(srcva);
     pa0 = walkaddr(pagetable, va0);
-    if(pa0 == 0)
+    if (pa0 == 0)
       return -1;
     n = PGSIZE - (srcva - va0);
-    if(n > max)
+    if (n > max)
       n = max;
 
     char *p = (char *) (pa0 + (srcva - va0));
-    while(n > 0){
-      if(*p == '\0'){
+    while (n > 0) {
+      if (*p == '\0') {
         *dst = '\0';
         got_null = 1;
         break;
@@ -428,7 +428,7 @@ copyinstr(pagetable_t pagetable, char *dst, unsigned long srcva, unsigned long m
 
     srcva = va0 + PGSIZE;
   }
-  if(got_null){
+  if (got_null) {
     return 0;
   } else {
     return -1;

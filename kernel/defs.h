@@ -11,7 +11,7 @@ struct superblock;
 struct pstat;
 
 // bio.c
-void            binit(void);
+void            binit();
 struct buf*     bread(unsigned int, unsigned int);
 void            brelse(struct buf*);
 void            bwrite(struct buf*);
@@ -19,7 +19,7 @@ void            bpin(struct buf*);
 void            bunpin(struct buf*);
 
 // console.c
-void            console_init(void);
+void            console_init();
 void            console_handle_irq(int);
 void            console_put(int);
 
@@ -27,10 +27,10 @@ void            console_put(int);
 int             exec(char*, char**);
 
 // file.c
-struct file*    filealloc(void);
+struct file*    filealloc();
 void            fileclose(struct file*);
 struct file*    filedup(struct file*);
-void            fileinit(void);
+void            fileinit();
 int             fileread(struct file*, unsigned long, int n);
 int             filestat(struct file*, unsigned long addr);
 int             filewrite(struct file*, unsigned long, int n);
@@ -56,20 +56,20 @@ int             writei(struct inode*, bool, unsigned long, unsigned int, unsigne
 void            itrunc(struct inode*);
 
 // ramdisk.c
-void            ramdiskinit(void);
-void            ramdiskintr(void);
+void            ramdiskinit();
+void            ramdiskintr();
 void            ramdiskrw(struct buf*);
 
 // kalloc.c
-void*           kalloc(void);
+void*           kalloc();
 void            kfree(void *);
-void            kinit(void);
+void            kinit();
 
 // log.c
 void            initlog(int, struct superblock*);
 void            log_write(struct buf*);
-void            begin_op(void);
-void            end_op(void);
+void            begin_op();
+void            end_op();
 
 // pipe.c
 int             pipealloc(struct file**, struct file**);
@@ -80,12 +80,12 @@ int             pipewrite(struct pipe*, unsigned long, int);
 // printf.c
 void            printf(char*, ...);
 void            panic(char*) __attribute__((noreturn));
-void            printfinit(void);
+void            printfinit();
 
 // proc.c
-int             cpuid(void);
+int             cpuid();
 void            exit(int);
-int             fork(void);
+int             fork();
 int             growproc(int);
 void            proc_mapstacks(pagetable_t);
 pagetable_t     proc_pagetable(struct proc *);
@@ -93,20 +93,20 @@ void            proc_freepagetable(pagetable_t, unsigned long);
 int             kill(int);
 int             killed(struct proc*);
 void            setkilled(struct proc*);
-struct cpu*     mycpu(void);
-struct cpu*     getmycpu(void);
+struct cpu*     mycpu();
+struct cpu*     getmycpu();
 struct proc*    myproc();
-void            procinit(void);
-void            scheduler(void) __attribute__((noreturn));
-void            sched(void);
+void            procinit();
+void            scheduler() __attribute__((noreturn));
+void            sched();
 void            sleep(void*, struct spinlock*);
-void            userinit(void);
+void            userinit();
 int             wait(unsigned long);
 void            wakeup(void*);
-void            yield(void);
+void            yield();
 int             either_copyout(bool user_dst, unsigned long dst, void *src, unsigned long len);
 int             either_copyin(void *dst, bool user_src, unsigned long src, unsigned long len);
-void            procdump(void);
+void            procdump();
 void            procinfo(struct pstat *);
 
 // swtch.S
@@ -117,8 +117,8 @@ void            acquire(struct spinlock*);
 int             holding(struct spinlock*);
 void            initlock(struct spinlock*);
 void            release(struct spinlock*);
-void            push_off(void);
-void            pop_off(void);
+void            push_off();
+void            pop_off();
 
 // sleeplock.c
 void            acquiresleep(struct sleeplock*);
@@ -146,25 +146,25 @@ void            syscall();
 // trap.c
 extern unsigned int     ticks;
 extern unsigned int     readcount;
-void            trapinit(void);
-void            trapinithart(void);
+void            trapinit();
+void            trapinithart();
 extern struct spinlock tickslock;
 extern struct spinlock readcountlock;
-void            usertrapret(void);
+void            usertrapret();
 
 // uart.c
-void            uart_init(void);
-void            uartintr(void);
-void            uartputc(int);
-void            uartputc_sync(int);
-int             uartgetc(void);
+void            uart_init();
+void            handle_uart_irq();
+void            uart_put(int);
+void            uart_put_sync(int);
+int             uart_get();
 
 // vm.c
-void            kvminit(void);
-void            kvminithart(void);
+void            kvminit();
+void            kvminithart();
 void            kvmmap(pagetable_t, unsigned long, unsigned long, unsigned long, int);
 int             mappages(pagetable_t, unsigned long, unsigned long, unsigned long, int);
-pagetable_t     uvmcreate(void);
+pagetable_t     uvmcreate();
 void            uvmfirst(pagetable_t, unsigned char *, unsigned int);
 unsigned long          uvmalloc(pagetable_t, unsigned long, unsigned long, int);
 unsigned long          uvmdealloc(pagetable_t, unsigned long, unsigned long);
@@ -179,15 +179,15 @@ int             copy_from_user(pagetable_t, char *, unsigned long, unsigned long
 int             copyinstr(pagetable_t, char *, unsigned long, unsigned long);
 
 // plic.c
-void            plicinit(void);
-void            plicinithart(void);
-int             plic_claim(void);
+void            plicinit();
+void            plicinithart();
+int             plic_claim();
 void            plic_complete(int);
 
 // virtio_disk.c
-void            virtio_disk_init(void);
+void            virtio_disk_init();
 void            virtio_disk_rw(struct buf *, int);
-void            virtio_disk_intr(void);
+void            virtio_disk_intr();
 
 // number of elements in fixed-size array
 #define NELEM(x) (sizeof(x)/sizeof((x)[0]))

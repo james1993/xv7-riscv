@@ -20,14 +20,14 @@ void
 acquire(struct spinlock *lk)
 {
   push_off(); // disable interrupts to avoid deadlock.
-  if(holding(lk))
+  if (holding(lk))
     panic("acquire");
 
   // On RISC-V, sync_lock_test_and_set turns into an atomic swap:
   //   a5 = 1
   //   s1 = &lk->locked
   //   amoswap.w.aq a5, a5, (s1)
-  while(__sync_lock_test_and_set(&lk->locked, 1) != 0)
+  while (__sync_lock_test_and_set(&lk->locked, 1) != 0)
     ;
 
   // Tell the C compiler and the processor to not move loads or stores
@@ -44,7 +44,7 @@ acquire(struct spinlock *lk)
 void
 release(struct spinlock *lk)
 {
-  if(!holding(lk))
+  if (!holding(lk))
     panic("release");
 
   lk->cpu = 0;
@@ -82,27 +82,26 @@ holding(struct spinlock *lk)
 // push_off/pop_off are like intr_off()/intr_on() except that they are matched:
 // it takes two pop_off()s to undo two push_off()s.  Also, if interrupts
 // are initially off, then push_off, pop_off leaves them off.
-
 void
-push_off(void)
+push_off()
 {
   int old = intr_get();
 
   intr_off();
-  if(mycpu()->noff == 0)
+  if (mycpu()->noff == 0)
     mycpu()->intena = old;
   mycpu()->noff += 1;
 }
 
 void
-pop_off(void)
+pop_off()
 {
   struct cpu *c = mycpu();
-  if(intr_get())
+  if (intr_get())
     panic("pop_off - interruptible");
-  if(c->noff < 1)
+  if (c->noff < 1)
     panic("pop_off");
   c->noff -= 1;
-  if(c->noff == 0 && c->intena)
+  if (c->noff == 0 && c->intena)
     intr_on();
 }
