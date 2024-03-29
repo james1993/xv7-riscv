@@ -57,10 +57,10 @@ void uart_init()
   initlock(&tx_buffer.lock);
 }
 
-/* If the UART is idle, and a character is waiting in the transmit buffer, send it.
+/* If the UART is idle, and a character is waiting in tx_buffer.buf, send it.
  * Caller must hold lock.
 */
-static void uart_start()
+static void uart_send()
 {
   while (tx_buffer.write_index != tx_buffer.read_index &&
          (ReadReg(LINE_STATUS_REG) & TX_IDLE) != 0) {
@@ -71,9 +71,8 @@ static void uart_start()
   }
 }
 
-/* Add a character to the output buffer and tell the
- * UART to start sending if it isn't already.
- * blocks if the output buffer is full. (for bottom halves)
+/* Add a character to the tx_buffer.buf and send it.
+ * Blocks if the output buffer is full. (for bottom halves)
  */
 void uart_put(int c)
 {
@@ -88,14 +87,13 @@ void uart_put(int c)
   }
 
   tx_buffer.buf[tx_buffer.write_index++ % UART_TX_BUF_SIZE] = c;
-  uart_start();
+  uart_send();
   release(&tx_buffer.lock);
 }
 
 
-/* uart_put() but without sleeping (for top-halves)
- */
-void uart_put_sync(int c)
+/* Send character ASAP. */
+void uart_put_nosleep(int c)
 {
   push_off();
 
@@ -109,10 +107,7 @@ void uart_put_sync(int c)
   pop_off();
 }
 
-/* Read one input character from the UART.
- * Return -1 if none is waiting.
-*/
-int uart_get()
+static int uart_read_next_byte()
 {
   if (ReadReg(LINE_STATUS_REG) & 0x01)
     return ReadReg(RECEIVE_HOLDING_REG);
@@ -123,12 +118,12 @@ int uart_get()
 /* Raised because input has arrived, or the uart is ready for more output, or
  * both. Reads and processes incoming characters. Called from devintr().
 */
-void handle_uart_irq()
+void uart_handle_irq()
 {
   int c;
 
   while (1) {
-    c = uart_get();
+    c = uart_read_next_byte();
     if (c == -1)
       break;
     console_handle_irq(c);
@@ -136,6 +131,6 @@ void handle_uart_irq()
 
   /* Send buffered characters. */
   acquire(&tx_buffer.lock);
-  uart_start();
+  uart_send();
   release(&tx_buffer.lock);
 }

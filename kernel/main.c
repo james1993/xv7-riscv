@@ -1,5 +1,3 @@
-#include "param.h"
-#include "memlayout.h"
 #include "riscv.h"
 #include "defs.h"
 
@@ -10,10 +8,10 @@ void main()
 {
   if (cpuid() == 0) {
     console_init();
-    printfinit();
+    printf_init();
     printf("\nxv7 kernel is booting\n\n");
-    kinit();         // physical page allocator
-    kvminit();       // create kernel page table
+    kalloc_init();
+    kvm_init();       // create kernel page table
     kvminithart();   // turn on paging
     procinit();      // process table
     trapinit();      // trap vectors

@@ -33,11 +33,11 @@ static struct console console;
  */
 void console_put(int c)
 {
-  if (c == BACKSPACE) { 
+  if (c == BACKSPACE) {
     /* Overwrite with a space. */
-    uart_put_sync('\b'); uart_put_sync(' '); uart_put_sync('\b');
+    uart_put_nosleep('\b'); uart_put_nosleep(' '); uart_put_nosleep('\b');
   } else {
-    uart_put_sync(c);
+    uart_put_nosleep(c);
   }
 }
 
@@ -61,7 +61,7 @@ static int console_write(unsigned long src, int n)
 }
 
 /*
- * For user read()s from the console.
+ * Copy characters out of console.buf until we reach '\n'
  * Returns number of bytes read, or -1 on error.
  */
 static int console_read(unsigned long dst, int n)
@@ -100,9 +100,7 @@ static int console_read(unsigned long dst, int n)
 }
 
 /*
- * The console input interrupt handler.
- * handle_uart_irq() calls this for input characters.
- * Do backspace processing, append to console.buf,
+ * uart_handle_irq() calls this to add one char to console.buf.
  * wake up console_read() if a whole line has arrived.
  */
 void console_handle_irq(int c)

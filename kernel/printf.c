@@ -1,6 +1,7 @@
-//
-// formatted console output -- printf, panic.
-//
+/*
+ * Formatted console output -- printf, panic.
+ * Implements %d, %x, %p, %s.
+ */
 
 #include <stdarg.h>
 
@@ -8,11 +9,8 @@
 #include "spinlock.h"
 #include "sleeplock.h"
 #include "fs.h"
-#include "file.h"
-#include "memlayout.h"
 #include "riscv.h"
 #include "defs.h"
-#include "proc.h"
 
 volatile int panicked = 0;
 
@@ -24,19 +22,17 @@ static struct {
 
 static char digits[] = "0123456789abcdef";
 
-static void
-printint(int xx, int base, int sign)
+static void printint(int integer, int base, int sign)
 {
-  char buf[16];
-  int i;
   unsigned int x;
+  char buf[16];
+  int i = 0;
 
-  if (sign && (sign = xx < 0))
-    x = -xx;
+  if (sign && (sign = integer < 0))
+    x = -integer;
   else
-    x = xx;
+    x = integer;
 
-  i = 0;
   do {
     buf[i++] = digits[x % base];
   } while ((x /= base) != 0);
@@ -48,10 +44,10 @@ printint(int xx, int base, int sign)
     console_put(buf[i]);
 }
 
-static void
-printptr(unsigned long x)
+static void printptr(unsigned long x)
 {
   int i;
+
   console_put('0');
   console_put('x');
   for (i = 0; i < (sizeof(unsigned long) * 2); i++, x <<= 4)
@@ -59,11 +55,10 @@ printptr(unsigned long x)
 }
 
 // Print to the console. only understands %d, %x, %p, %s.
-void
-printf(char *fmt, ...)
+void printf(char *fmt, ...)
 {
-  va_list ap;
   int i, c, locking;
+  va_list ap;
   char *s;
 
   locking = pr.locking;
@@ -79,6 +74,7 @@ printf(char *fmt, ...)
       console_put(c);
       continue;
     }
+
     c = fmt[++i] & 0xff;
     if (c == 0)
       break;
@@ -114,8 +110,7 @@ printf(char *fmt, ...)
     release(&pr.lock);
 }
 
-void
-panic(char *s)
+void panic(char *s)
 {
   pr.locking = 0;
   printf("panic: ");
@@ -126,8 +121,7 @@ panic(char *s)
     ;
 }
 
-void
-printfinit()
+void printf_init()
 {
   initlock(&pr.lock);
   pr.locking = 1;

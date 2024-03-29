@@ -63,7 +63,7 @@ void            ramdiskrw(struct buf*);
 // kalloc.c
 void*           kalloc();
 void            kfree(void *);
-void            kinit();
+void            kalloc_init();
 
 // log.c
 void            initlog(int, struct superblock*);
@@ -80,7 +80,7 @@ int             pipewrite(struct pipe*, unsigned long, int);
 // printf.c
 void            printf(char*, ...);
 void            panic(char*) __attribute__((noreturn));
-void            printfinit();
+void            printf_init();
 
 // proc.c
 int             cpuid();
@@ -154,13 +154,12 @@ void            usertrapret();
 
 // uart.c
 void            uart_init();
-void            handle_uart_irq();
+void            uart_handle_irq();
 void            uart_put(int);
-void            uart_put_sync(int);
-int             uart_get();
+void            uart_put_nosleep(int);
 
 // vm.c
-void            kvminit();
+void            kvm_init();
 void            kvminithart();
 void            kvmmap(pagetable_t, unsigned long, unsigned long, unsigned long, int);
 int             mappages(pagetable_t, unsigned long, unsigned long, unsigned long, int);

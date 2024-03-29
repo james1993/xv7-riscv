@@ -50,7 +50,7 @@ kvmmake()
 
 // Initialize the one kernel_pagetable
 void
-kvminit()
+kvm_init()
 {
   kernel_pagetable = kvmmake();
 }
