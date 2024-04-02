@@ -114,7 +114,7 @@ copyout(char *s)
 
 // what if you pass ridiculous string pointers to system calls?
 void
-copyinstr1(char *s)
+copyin_str1(char *s)
 {
   unsigned long addrs[] = { 0x80000000LL, 0xffffffffffffffff };
 
@@ -133,7 +133,7 @@ copyinstr1(char *s)
 // of the kernel buffer it is copied into, so that the null
 // would fall just beyond the end of the kernel buffer?
 void
-copyinstr2(char *s)
+copyin_str2(char *s)
 {
   char b[MAXPATH+1];
 
@@ -195,7 +195,7 @@ copyinstr2(char *s)
 
 // what if a string argument crosses over the end of last user page?
 void
-copyinstr3(char *s)
+copyin_str3(char *s)
 {
   sbrk(8192);
   unsigned long top = (unsigned long) sbrk(0);
@@ -2443,7 +2443,7 @@ textwrite(char *s)
     exit(xstatus);
 }
 
-// regression test. copyin(), copyout(), and copyinstr() used to cast
+// regression test. copyin(), copyout(), and copyin_str() used to cast
 // the virtual page address to unsigned int, which (with certain wild system
 // call arguments) resulted in a kernel page faults.
 void *big = (void*) 0xeaeb0b5b00002f5e;
@@ -2591,9 +2591,9 @@ struct test {
 } quicktests[] = {
   {copyin, "copyin"},
   {copyout, "copyout"},
-  {copyinstr1, "copyinstr1"},
-  {copyinstr2, "copyinstr2"},
-  {copyinstr3, "copyinstr3"},
+  {copyin_str1, "copyin_str1"},
+  {copyin_str2, "copyin_str2"},
+  {copyin_str3, "copyin_str3"},
   {rwsbrk, "rwsbrk" },
   {truncate1, "truncate1"},
   {truncate2, "truncate2"},

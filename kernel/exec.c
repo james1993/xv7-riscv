@@ -27,7 +27,7 @@ exec(char *path, char **argv)
   struct elfhdr elf;
   struct inode *ip;
   struct proghdr ph;
-  pagetable_t pagetable = 0, oldpagetable;
+  unsigned long * pagetable = 0, *oldpagetable;
   struct proc *p = myproc();
 
   begin_op();
@@ -61,7 +61,7 @@ exec(char *path, char **argv)
     if (ph.vaddr % PGSIZE != 0)
       goto bad;
     unsigned long sz1;
-    if ((sz1 = uvmalloc(pagetable, sz, ph.vaddr + ph.memsz, flags2perm(ph.flags))) == 0)
+    if ((sz1 = uvm_alloc(pagetable, sz, ph.vaddr + ph.memsz, flags2perm(ph.flags))) == 0)
       goto bad;
     sz = sz1;
     if (loadseg(pagetable, ph.vaddr, ip, ph.off, ph.filesz) < 0)
@@ -79,10 +79,10 @@ exec(char *path, char **argv)
   // Use the second as the user stack.
   sz = PGROUNDUP(sz);
   unsigned long sz1;
-  if ((sz1 = uvmalloc(pagetable, sz, sz + 2*PGSIZE, PTE_W)) == 0)
+  if ((sz1 = uvm_alloc(pagetable, sz, sz + 2*PGSIZE, PTE_W)) == 0)
     goto bad;
   sz = sz1;
-  uvmclear(pagetable, sz-2*PGSIZE);
+  uvm_clear(pagetable, sz-2*PGSIZE);
   sp = sz;
   stackbase = sp - PGSIZE;
 
@@ -144,7 +144,7 @@ exec(char *path, char **argv)
 // and the pages from va to va+sz must already be mapped.
 // Returns 0 on success, -1 on failure.
 static int
-loadseg(pagetable_t pagetable, unsigned long va, struct inode *ip, unsigned int offset, unsigned int sz)
+loadseg(unsigned long * pagetable, unsigned long va, struct inode *ip, unsigned int offset, unsigned int sz)
 {
   unsigned int i, n;
   unsigned long pa;

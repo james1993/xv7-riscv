@@ -327,9 +327,6 @@ sfence_vma()
   __asm__ volatile("sfence.vma zero, zero");
 }
 
-typedef unsigned long pte_t;
-typedef unsigned long *pagetable_t; // 512 PTEs
-
 #endif // __ASSEMBLER__
 
 #define PGSIZE 4096 // bytes per page

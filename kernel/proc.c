@@ -31,7 +31,7 @@ struct spinlock wait_lock;
 // Map it high in memory, followed by an invalid
 // guard page.
 void
-proc_mapstacks(pagetable_t kpgtbl)
+proc_mapstacks(unsigned long * kpgtbl)
 {
   struct proc *p;
   
@@ -40,13 +40,11 @@ proc_mapstacks(pagetable_t kpgtbl)
     if (pa == 0)
       panic("kalloc");
     unsigned long va = KSTACK((int) (p - proc));
-    kvmmap(kpgtbl, va, (unsigned long)pa, PGSIZE, PTE_R | PTE_W);
+    kvm_map(kpgtbl, va, (unsigned long)pa, PGSIZE, PTE_R | PTE_W);
   }
 }
 
-// initialize the proc table.
-void
-procinit()
+void proc_init()
 {
   struct proc *p;
   
@@ -179,14 +177,12 @@ freeproc(struct proc *p)
 
 // Create a user page table for a given process, with no user memory,
 // but with trampoline and trapframe pages.
-pagetable_t
+unsigned long *
 proc_pagetable(struct proc *p)
 {
-  pagetable_t pagetable;
+  unsigned long * pagetable = kalloc();
 
-  // An empty page table.
-  pagetable = uvmcreate();
-  if (pagetable == 0)
+  if (!pagetable)
     return 0;
 
   // map the trampoline code (for system call return)
@@ -195,7 +191,7 @@ proc_pagetable(struct proc *p)
   // to/from user space, so not PTE_U.
   if (mappages(pagetable, TRAMPOLINE, PGSIZE,
               (unsigned long)trampoline, PTE_R | PTE_X) < 0) {
-    uvmfree(pagetable, 0);
+    uvm_free(pagetable, 0);
     return 0;
   }
 
@@ -203,8 +199,8 @@ proc_pagetable(struct proc *p)
   // trampoline.S.
   if (mappages(pagetable, TRAPFRAME, PGSIZE,
               (unsigned long)(p->trapframe), PTE_R | PTE_W) < 0) {
-    uvmunmap(pagetable, TRAMPOLINE, 1, 0);
-    uvmfree(pagetable, 0);
+    uvm_unmap(pagetable, TRAMPOLINE, 1, 0);
+    uvm_free(pagetable, 0);
     return 0;
   }
 
@@ -214,11 +210,11 @@ proc_pagetable(struct proc *p)
 // Free a process's page table, and free the
 // physical memory it refers to.
 void
-proc_freepagetable(pagetable_t pagetable, unsigned long sz)
+proc_freepagetable(unsigned long * pagetable, unsigned long sz)
 {
-  uvmunmap(pagetable, TRAMPOLINE, 1, 0);
-  uvmunmap(pagetable, TRAPFRAME, 1, 0);
-  uvmfree(pagetable, sz);
+  uvm_unmap(pagetable, TRAMPOLINE, 1, 0);
+  uvm_unmap(pagetable, TRAPFRAME, 1, 0);
+  uvm_free(pagetable, sz);
 }
 
 // a user program that calls exec("/init")
@@ -245,7 +241,7 @@ userinit()
   
   // allocate one user page and copy initcode's instructions
   // and data into it.
-  uvmfirst(p->pagetable, initcode, sizeof(initcode));
+  uvm_first(p->pagetable, initcode, sizeof(initcode));
   p->sz = PGSIZE;
 
   // prepare for the very first "return" from kernel to user.
@@ -270,11 +266,11 @@ growproc(int n)
 
   sz = p->sz;
   if (n > 0) {
-    if ((sz = uvmalloc(p->pagetable, sz, sz + n, PTE_W)) == 0) {
+    if ((sz = uvm_alloc(p->pagetable, sz, sz + n, PTE_W)) == 0) {
       return -1;
     }
   } else if (n < 0) {
-    sz = uvmdealloc(p->pagetable, sz, sz + n);
+    sz = uvm_dealloc(p->pagetable, sz, sz + n);
   }
   p->sz = sz;
   return 0;
@@ -295,7 +291,7 @@ fork()
   }
 
   // Copy user memory from parent to child.
-  if (uvmcopy(p->pagetable, np->pagetable, p->sz) < 0) {
+  if (uvm_copy(p->pagetable, np->pagetable, p->sz) < 0) {
     freeproc(np);
     release(&np->lock);
     return -1;

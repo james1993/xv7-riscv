@@ -122,9 +122,6 @@ virtio_disk_init()
   disk.used = kalloc();
   if (!disk.desc || !disk.avail || !disk.used)
     panic("virtio disk kalloc");
-  memset(disk.desc, 0, PGSIZE);
-  memset(disk.avail, 0, PGSIZE);
-  memset(disk.used, 0, PGSIZE);
 
   // set queue size.
   *R(VIRTIO_MMIO_QUEUE_NUM) = NUM;

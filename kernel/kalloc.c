@@ -58,5 +58,7 @@ void *kalloc()
     kmem.freelist = kmem.freelist->next;
   release(&kmem.lock);
 
+  memset(r, 0, PGSIZE);
+
   return (void*)r;
 }

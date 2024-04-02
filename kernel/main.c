@@ -12,8 +12,8 @@ void main()
     printf("\nxv7 kernel is booting\n\n");
     kalloc_init();
     kvm_init();       // create kernel page table
-    kvminithart();   // turn on paging
-    procinit();      // process table
+    kvm_init_hart();   // turn on paging
+    proc_init();      // process table
     trapinit();      // trap vectors
     trapinithart();  // install kernel trap vector
     plicinit();      // set up interrupt controller
@@ -29,7 +29,7 @@ void main()
     while (started == 0);
     __sync_synchronize();
     printf("hart %d starting\n", cpuid());
-    kvminithart();    // turn on paging
+    kvm_init_hart();    // turn on paging
     trapinithart();   // install kernel trap vector
     plicinithart();   // ask PLIC for device interrupts
   }

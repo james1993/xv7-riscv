@@ -3,9 +3,11 @@ Version 6 implemented for a modern RISC-V multiprocessor using ANSI C.
 
 Refactoring changes:
 - Ported to "2x" C standard
-- Coding style follows mainline Linux, e.g. reverse Christmas tree, C-style comments, etc.
-- Better variable and function naming which removes the need for so many comments
-- More consistent design of files w.r.t. structs
+- Coding style follows mainline Linux, e.g. reverse Christmas tree, C-style comments, all variable declaractions at top of function, etc.
+- Improved variable and function naming which removes the need for so many comments
+- Static-ify applicable functions
+- Trimmed down #includes
+- More consistent design of files w.r.t. struct usage
 
 Feature additions:
 - Lottery scheduler for processes (done)
