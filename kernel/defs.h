@@ -146,8 +146,8 @@ void            syscall();
 // trap.c
 extern unsigned int     ticks;
 extern unsigned int     readcount;
-void            trapinit();
-void            trapinithart();
+void            trap_init();
+void            trap_init_hart();
 extern struct spinlock tickslock;
 extern struct spinlock readcountlock;
 void            usertrapret();
@@ -176,8 +176,8 @@ int             copy_from_user(unsigned long *, char *, unsigned long, unsigned 
 int             copyin_str(unsigned long *, char *, unsigned long, unsigned long);
 
 // plic.c
-void            plicinit();
-void            plicinithart();
+void            plic_init();
+void            plic_init_hart();
 int             plic_claim();
 void            plic_complete(int);
 

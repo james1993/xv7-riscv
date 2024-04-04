@@ -1,46 +1,33 @@
-#include "param.h"
+/* The riscv Platform Level Interrupt Controller (PLIC). */
+
 #include "memlayout.h"
-#include "riscv.h"
 #include "defs.h"
 
-//
-// the riscv Platform Level Interrupt Controller (PLIC).
-//
-
-void
-plicinit()
+/* Enable IRQs */
+void plic_init()
 {
-  // set desired IRQ priorities non-zero (otherwise disabled).
   *(unsigned int*)(PLIC + UART0_IRQ*4) = 1;
   *(unsigned int*)(PLIC + VIRTIO0_IRQ*4) = 1;
 }
 
-void
-plicinithart()
+/* Enable IRQs for this hart */
+void plic_init_hart()
 {
   int hart = cpuid();
   
-  // set enable bits for this hart's S-mode
-  // for the uart and virtio disk.
   *(unsigned int*)PLIC_SENABLE(hart) = (1 << UART0_IRQ) | (1 << VIRTIO0_IRQ);
-
-  // set this hart's S-mode priority threshold to 0.
   *(unsigned int*)PLIC_SPRIORITY(hart) = 0;
 }
 
-// ask the PLIC what interrupt we should serve.
-int
-plic_claim()
+/* Ask PLIC which interrupt we should serve. */
+int plic_claim()
 {
-  int hart = cpuid();
-  int irq = *(unsigned int*)PLIC_SCLAIM(hart);
-  return irq;
+  return *(unsigned int*)PLIC_SCLAIM(cpuid());
 }
 
-// tell the PLIC we've served this IRQ.
-void
-plic_complete(int irq)
+/* Tell the PLIC we've served this IRQ. */
+void plic_complete(int irq)
 {
   int hart = cpuid();
-  *(unsigned int*)PLIC_SCLAIM(hart) = irq;
+  *(unsigned int*)PLIC_SCLAIM(cpuid()) = irq;
 }
