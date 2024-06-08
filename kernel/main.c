@@ -19,8 +19,8 @@ void main()
     plic_init();
     plic_init_hart();
     bufcache_init();
-    iinit();         // inode table
-    fileinit();      // file table
+    inode_init();
+    file_init();
     virtio_disk_init(); // emulated hard disk
     userinit();      // first user process
     __sync_synchronize();

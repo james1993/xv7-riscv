@@ -1,4 +1,4 @@
-struct stat;
+struct status;
 
 // system calls
 int fork();
@@ -13,7 +13,7 @@ int exec(const char*, char**);
 int open(const char*, int);
 int mknod(const char*, short, short);
 int unlink(const char*);
-int fstat(int fd, struct stat*);
+int fstat(int fd, struct status*);
 int link(const char*, const char*);
 int mkdir(const char*);
 int chdir(const char*);
@@ -26,7 +26,7 @@ int readcount();
 int alarm(int ticks, void (*handler)());
 
 // ulib.c
-int stat(const char*, struct stat*);
+int stat(const char*, struct status*);
 char* strcpy(char*, const char*);
 void *memmove(void*, const void*, int);
 char* strchr(const char*, char c);

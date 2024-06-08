@@ -70,8 +70,8 @@ install_trans(int recovering)
   int tail;
 
   for (tail = 0; tail < log.lh.n; tail++) {
-    struct buf *lbuf = bufcache_read(log.dev, log.start+tail+1); // read log block
-    struct buf *dbuf = bufcache_read(log.dev, log.lh.block[tail]); // read dst
+    struct buf *lbuf = bufcache_read(log.start+tail+1); // read log block
+    struct buf *dbuf = bufcache_read(log.lh.block[tail]); // read dst
     memmove(dbuf->data, lbuf->data, BSIZE);  // copy block to dst
     bufcache_write(dbuf);  // write dst to disk
     if (recovering == 0)
@@ -85,7 +85,7 @@ install_trans(int recovering)
 static void
 read_head()
 {
-  struct buf *buf = bufcache_read(log.dev, log.start);
+  struct buf *buf = bufcache_read(log.start);
   struct logheader *lh = (struct logheader *) (buf->data);
   int i;
   log.lh.n = lh->n;
@@ -101,7 +101,7 @@ read_head()
 static void
 write_head()
 {
-  struct buf *buf = bufcache_read(log.dev, log.start);
+  struct buf *buf = bufcache_read(log.start);
   struct logheader *hb = (struct logheader *) (buf->data);
   int i;
   hb->n = log.lh.n;
@@ -180,8 +180,8 @@ write_log()
   int tail;
 
   for (tail = 0; tail < log.lh.n; tail++) {
-    struct buf *to = bufcache_read(log.dev, log.start+tail+1); // log block
-    struct buf *from = bufcache_read(log.dev, log.lh.block[tail]); // cache block
+    struct buf *to = bufcache_read(log.start+tail+1); // log block
+    struct buf *from = bufcache_read(log.lh.block[tail]); // cache block
     memmove(to->data, from->data, BSIZE);
     bufcache_write(to);  // write the log
     bufcache_release(from);

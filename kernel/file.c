@@ -1,8 +1,5 @@
-//
-// Support functions for system calls that involve file descriptors.
-//
+/* Functions for system calls that involve file descriptors. */
 
-#include "riscv.h"
 #include "defs.h"
 #include "param.h"
 #include "fs.h"
@@ -12,25 +9,25 @@
 #include "stat.h"
 #include "proc.h"
 
-struct devsw devsw[NDEV];
-struct {
+struct file_table {
   struct spinlock lock;
   struct file file[NFILE];
-} ftable;
+};
 
-void
-fileinit()
+struct file_table ftable;
+struct devsw devsw[NDEV];
+
+void file_init()
 {
   initlock(&ftable.lock);
 }
 
-// Allocate a file structure.
-struct file*
-filealloc()
+struct file *file_alloc()
 {
   struct file *f;
 
   acquire(&ftable.lock);
+
   for (f = ftable.file; f < ftable.file + NFILE; f++) {
     if (f->ref == 0) {
       f->ref = 1;
@@ -38,35 +35,33 @@ filealloc()
       return f;
     }
   }
+
   release(&ftable.lock);
+
   return 0;
 }
 
-// Increment ref count for file f.
-struct file*
-filedup(struct file *f)
+/* Increment ref count for file f. */
+struct file* file_dup(struct file *f)
 {
   acquire(&ftable.lock);
-  if (f->ref < 1)
-    panic("filedup");
   f->ref++;
   release(&ftable.lock);
+
   return f;
 }
 
-// Close file f.  (Decrement ref count, close when reaches 0.)
-void
-fileclose(struct file *f)
+/* Decrement ref count, close if 0. */
+void file_close(struct file *f)
 {
   struct file ff;
 
   acquire(&ftable.lock);
-  if (f->ref < 1)
-    panic("fileclose");
   if (--f->ref > 0) {
     release(&ftable.lock);
     return;
   }
+
   ff = *f;
   f->ref = 0;
   f->type = FD_NONE;
@@ -82,12 +77,11 @@ fileclose(struct file *f)
 }
 
 // Get metadata about file f.
-// addr is a user virtual address, pointing to a struct stat.
-int
-filestat(struct file *f, unsigned long addr)
+// addr is a user virtual address, pointing to a struct status.
+int file_status(struct file *f, unsigned long addr)
 {
   struct proc *p = myproc();
-  struct stat st;
+  struct status st;
   
   if (f->type == FD_INODE || f->type == FD_DEVICE) {
     ilock(f->ip);

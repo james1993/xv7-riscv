@@ -45,18 +45,18 @@ void bufcache_init()
   }
 }
 
-// Look through buffer cache for block on device dev.
-// If not found, allocate a buffer.
-// In either case, return locked buffer.
-static struct buf* bufcache_get(unsigned int dev, unsigned int blockno)
+/* Look through buffer cache for block on file system root disk.
+ * If not found, allocate a buffer. In either case, return locked buffer.
+ */
+static struct buf* bufcache_get(unsigned int blockno)
 {
   struct buf *b;
 
   acquire(&bcache.lock);
 
-  // Is the block already cached?
+  /* Is the block already cached? */
   for (b = bcache.head.next; b != &bcache.head; b = b->next) {
-    if (b->dev == dev && b->blockno == blockno) {
+    if (b->blockno == blockno) {
       b->refcnt++;
       release(&bcache.lock);
       acquiresleep(&b->lock);
@@ -64,11 +64,9 @@ static struct buf* bufcache_get(unsigned int dev, unsigned int blockno)
     }
   }
 
-  // Not cached.
-  // Recycle the least recently used (LRU) unused buffer.
+  /* Not cached. Recycle the least recently used (LRU) unused buffer. */
   for (b = bcache.head.prev; b != &bcache.head; b = b->prev) {
     if (b->refcnt == 0) {
-      b->dev = dev;
       b->blockno = blockno;
       b->valid = false;
       b->refcnt = 1;
@@ -80,27 +78,29 @@ static struct buf* bufcache_get(unsigned int dev, unsigned int blockno)
   panic("bufcache_get: no buffers");
 }
 
-// Return a locked buf with the contents of the indicated block.
-struct buf* bufcache_read(unsigned int dev, unsigned int blockno)
+/* Return a buffer with the contents of the indicated block. */
+struct buf *bufcache_read(unsigned int blockno)
 {
-  struct buf *b = bufcache_get(dev, blockno);
+  struct buf *b = bufcache_get(blockno);
+
   if (!b->valid) {
     virtio_disk_rw(b, 0);
     b->valid = true;
   }
+
   return b;
 }
 
-// Write b's contents to disk.  Must be locked.
+/* Write buffer contents to disk. Must be locked. */
 void bufcache_write(struct buf *b)
 {
   if (!holdingsleep(&b->lock))
     panic("bufcache_write");
+
   virtio_disk_rw(b, 1);
 }
 
-// Release a locked buffer.
-// Move to the head of the most-recently-used list.
+/* Release a locked buffer. Move to the head of the LRU cache. */
 void bufcache_release(struct buf *b)
 {
   if (!holdingsleep(&b->lock))
@@ -111,7 +111,7 @@ void bufcache_release(struct buf *b)
   acquire(&bcache.lock);
   b->refcnt--;
   if (b->refcnt == 0) {
-    // no one is waiting for it.
+    /* no one is waiting for it. */
     b->next->prev = b->prev;
     b->prev->next = b->next;
     b->next = bcache.head.next;
@@ -123,13 +123,15 @@ void bufcache_release(struct buf *b)
   release(&bcache.lock);
 }
 
-void bufcache_pin(struct buf *b) {
+void bufcache_pin(struct buf *b)
+{
   acquire(&bcache.lock);
   b->refcnt++;
   release(&bcache.lock);
 }
 
-void bufcache_unpin(struct buf *b) {
+void bufcache_unpin(struct buf *b)
+{
   acquire(&bcache.lock);
   b->refcnt--;
   release(&bcache.lock);

@@ -25,7 +25,7 @@ pipealloc(struct file **f0, struct file **f1)
 
   pi = 0;
   *f0 = *f1 = 0;
-  if ((*f0 = filealloc()) == 0 || (*f1 = filealloc()) == 0)
+  if ((*f0 = file_alloc()) == 0 || (*f1 = file_alloc()) == 0)
     goto bad;
   if ((pi = (struct pipe*)kalloc()) == 0)
     goto bad;
@@ -48,9 +48,9 @@ pipealloc(struct file **f0, struct file **f1)
   if (pi)
     kfree((char*)pi);
   if (*f0)
-    fileclose(*f0);
+    file_close(*f0);
   if (*f1)
-    fileclose(*f1);
+    file_close(*f1);
   return -1;
 }
 

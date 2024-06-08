@@ -273,7 +273,7 @@ int fork()
   /* Increment reference counts on open file descriptors. */
   for (i = 0; i < NOFILE; i++)
     if (p->ofile[i])
-      np->ofile[i] = filedup(p->ofile[i]);
+      np->ofile[i] = file_dup(p->ofile[i]);
 
   np->cwd = idup(p->cwd);
 
@@ -316,7 +316,7 @@ void exit(int status)
   /* Close all open files. */
   for (int fd = 0; fd < NOFILE; fd++) {
     if (p->ofile[fd]) {
-      fileclose(p->ofile[fd]);
+      file_close(p->ofile[fd]);
       p->ofile[fd] = 0;
     }
   }

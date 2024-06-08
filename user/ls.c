@@ -27,7 +27,7 @@ ls(char *path)
   char buf[512], *p;
   int fd;
   struct dirent de;
-  struct stat st;
+  struct status st;
 
   if ((fd = open(path, 0)) < 0) {
     fprintf(2, "ls: cannot open %s\n", path);

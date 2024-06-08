@@ -6,13 +6,13 @@ struct pipe;
 struct proc;
 struct spinlock;
 struct sleeplock;
-struct stat;
+struct status;
 struct superblock;
 struct pstat;
 
 // bio.c
 void            bufcache_init();
-struct buf*     bufcache_read(unsigned int, unsigned int);
+struct buf*     bufcache_read(unsigned int);
 void            bufcache_release(struct buf*);
 void            bufcache_write(struct buf*);
 void            bufcache_pin(struct buf*);
@@ -27,12 +27,12 @@ void            console_put(int);
 int             exec(char*, char**);
 
 // file.c
-struct file*    filealloc();
-void            fileclose(struct file*);
-struct file*    filedup(struct file*);
-void            fileinit();
+struct file*    file_alloc();
+void            file_close(struct file*);
+struct file*    file_dup(struct file*);
+void            file_init();
 int             fileread(struct file*, unsigned long, int n);
-int             filestat(struct file*, unsigned long addr);
+int             file_status(struct file*, unsigned long addr);
 int             filewrite(struct file*, unsigned long, int n);
 
 // fs.c
@@ -41,7 +41,7 @@ int             dirlink(struct inode*, char*, unsigned int);
 struct inode*   dirlookup(struct inode*, char*, unsigned int*);
 struct inode*   ialloc(unsigned int, short);
 struct inode*   idup(struct inode*);
-void            iinit();
+void            inode_init();
 void            ilock(struct inode*);
 void            iput(struct inode*);
 void            iunlock(struct inode*);
@@ -51,7 +51,7 @@ int             namecmp(const char*, const char*);
 struct inode*   namei(char*);
 struct inode*   nameiparent(char*, char*);
 int             readi(struct inode*, int, unsigned long, unsigned int, unsigned int);
-void            stati(struct inode*, struct stat*);
+void            stati(struct inode*, struct status*);
 int             writei(struct inode*, bool, unsigned long, unsigned int, unsigned int);
 void            itrunc(struct inode*);
 

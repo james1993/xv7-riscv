@@ -60,7 +60,7 @@ sys_dup()
     return -1;
   if ((fd=fdalloc(f)) < 0)
     return -1;
-  filedup(f);
+  file_dup(f);
   return fd;
 }
 
@@ -104,7 +104,7 @@ sys_close()
   if (argfd(0, &fd, &f) < 0)
     return -1;
   myproc()->ofile[fd] = 0;
-  fileclose(f);
+  file_close(f);
   return 0;
 }
 
@@ -112,12 +112,12 @@ unsigned long
 sys_fstat()
 {
   struct file *f;
-  unsigned long st; // user pointer to struct stat
+  unsigned long st; // user pointer to struct status
 
   argaddr(1, &st);
   if (argfd(0, 0, &f) < 0)
     return -1;
-  return filestat(f, st);
+  return file_status(f, st);
 }
 
 // Create the path new as a link to the same inode as old.
@@ -342,9 +342,9 @@ sys_open()
     return -1;
   }
 
-  if ((f = filealloc()) == 0 || (fd = fdalloc(f)) < 0) {
+  if ((f = file_alloc()) == 0 || (fd = fdalloc(f)) < 0) {
     if (f)
-      fileclose(f);
+      file_close(f);
     iunlockput(ip);
     end_op();
     return -1;
@@ -490,16 +490,16 @@ sys_pipe()
   if ((fd0 = fdalloc(rf)) < 0 || (fd1 = fdalloc(wf)) < 0) {
     if (fd0 >= 0)
       p->ofile[fd0] = 0;
-    fileclose(rf);
-    fileclose(wf);
+    file_close(rf);
+    file_close(wf);
     return -1;
   }
   if (copy_to_user(p->pagetable, fdarray, (char*)&fd0, sizeof(fd0)) < 0 ||
      copy_to_user(p->pagetable, fdarray+sizeof(fd0), (char *)&fd1, sizeof(fd1)) < 0) {
     p->ofile[fd0] = 0;
     p->ofile[fd1] = 0;
-    fileclose(rf);
-    fileclose(wf);
+    file_close(rf);
+    file_close(wf);
     return -1;
   }
   return 0;
