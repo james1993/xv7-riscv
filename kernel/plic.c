@@ -28,6 +28,5 @@ int plic_claim()
 /* Tell the PLIC we've served this IRQ. */
 void plic_complete(int irq)
 {
-  int hart = cpuid();
   *(unsigned int*)PLIC_SCLAIM(cpuid()) = irq;
 }

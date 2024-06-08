@@ -16,9 +16,9 @@ void main()
     proc_init();
     trap_init();
     trap_init_hart();
-    plic_init();      // set up interrupt controller
-    plic_init_hart();  // ask PLIC for device interrupts
-    binit();         // buffer cache
+    plic_init();
+    plic_init_hart();
+    bufcache_init();
     iinit();         // inode table
     fileinit();      // file table
     virtio_disk_init(); // emulated hard disk

@@ -31,9 +31,9 @@ readsb(int dev, struct superblock *sb)
 {
   struct buf *bp;
 
-  bp = bread(dev, 1);
+  bp = bufcache_read(dev, 1);
   memmove(sb, bp->data, sizeof(*sb));
-  brelse(bp);
+  bufcache_release(bp);
 }
 
 // Init fs
@@ -51,10 +51,10 @@ bzero(int dev, int bno)
 {
   struct buf *bp;
 
-  bp = bread(dev, bno);
+  bp = bufcache_read(dev, bno);
   memset(bp->data, 0, BSIZE);
   log_write(bp);
-  brelse(bp);
+  bufcache_release(bp);
 }
 
 // Blocks.
@@ -69,18 +69,18 @@ balloc(unsigned int dev)
 
   bp = 0;
   for (b = 0; b < sb.size; b += BPB) {
-    bp = bread(dev, BBLOCK(b, sb));
+    bp = bufcache_read(dev, BBLOCK(b, sb));
     for (bi = 0; bi < BPB && b + bi < sb.size; bi++) {
       m = 1 << (bi % 8);
       if ((bp->data[bi/8] & m) == 0) {  // Is block free?
         bp->data[bi/8] |= m;  // Mark block in use.
         log_write(bp);
-        brelse(bp);
+        bufcache_release(bp);
         bzero(dev, b + bi);
         return b + bi;
       }
     }
-    brelse(bp);
+    bufcache_release(bp);
   }
   printf("balloc: out of blocks\n");
   return 0;
@@ -93,14 +93,14 @@ bfree(int dev, unsigned int b)
   struct buf *bp;
   int bi, m;
 
-  bp = bread(dev, BBLOCK(b, sb));
+  bp = bufcache_read(dev, BBLOCK(b, sb));
   bi = b % BPB;
   m = 1 << (bi % 8);
   if ((bp->data[bi/8] & m) == 0)
     panic("freeing free block");
   bp->data[bi/8] &= ~m;
   log_write(bp);
-  brelse(bp);
+  bufcache_release(bp);
 }
 
 // Inodes.
@@ -202,16 +202,16 @@ ialloc(unsigned int dev, short type)
   struct dinode *dip;
 
   for (inum = 1; inum < sb.ninodes; inum++) {
-    bp = bread(dev, IBLOCK(inum, sb));
+    bp = bufcache_read(dev, IBLOCK(inum, sb));
     dip = (struct dinode*)bp->data + inum%IPB;
     if (dip->type == 0) {  // a free inode
       memset(dip, 0, sizeof(*dip));
       dip->type = type;
       log_write(bp);   // mark it allocated on the disk
-      brelse(bp);
+      bufcache_release(bp);
       return iget(dev, inum);
     }
-    brelse(bp);
+    bufcache_release(bp);
   }
   printf("ialloc: no inodes\n");
   return 0;
@@ -227,7 +227,7 @@ iupdate(struct inode *ip)
   struct buf *bp;
   struct dinode *dip;
 
-  bp = bread(ip->dev, IBLOCK(ip->inum, sb));
+  bp = bufcache_read(ip->dev, IBLOCK(ip->inum, sb));
   dip = (struct dinode*)bp->data + ip->inum%IPB;
   dip->type = ip->type;
   dip->major = ip->major;
@@ -236,7 +236,7 @@ iupdate(struct inode *ip)
   dip->size = ip->size;
   memmove(dip->addrs, ip->addrs, sizeof(ip->addrs));
   log_write(bp);
-  brelse(bp);
+  bufcache_release(bp);
 }
 
 // Find the inode with number inum on device dev
@@ -300,7 +300,7 @@ ilock(struct inode *ip)
   acquiresleep(&ip->lock);
 
   if (ip->valid == 0) {
-    bp = bread(ip->dev, IBLOCK(ip->inum, sb));
+    bp = bufcache_read(ip->dev, IBLOCK(ip->inum, sb));
     dip = (struct dinode*)bp->data + ip->inum%IPB;
     ip->type = dip->type;
     ip->major = dip->major;
@@ -308,7 +308,7 @@ ilock(struct inode *ip)
     ip->nlink = dip->nlink;
     ip->size = dip->size;
     memmove(ip->addrs, dip->addrs, sizeof(ip->addrs));
-    brelse(bp);
+    bufcache_release(bp);
     ip->valid = 1;
     if (ip->type == 0)
       panic("ilock: no type");
@@ -403,7 +403,7 @@ bmap(struct inode *ip, unsigned int bn)
         return 0;
       ip->addrs[NDIRECT] = addr;
     }
-    bp = bread(ip->dev, addr);
+    bp = bufcache_read(ip->dev, addr);
     a = (unsigned int*)bp->data;
     if ((addr = a[bn]) == 0) {
       addr = balloc(ip->dev);
@@ -412,7 +412,7 @@ bmap(struct inode *ip, unsigned int bn)
         log_write(bp);
       }
     }
-    brelse(bp);
+    bufcache_release(bp);
     return addr;
   }
 
@@ -436,13 +436,13 @@ itrunc(struct inode *ip)
   }
 
   if (ip->addrs[NDIRECT]) {
-    bp = bread(ip->dev, ip->addrs[NDIRECT]);
+    bp = bufcache_read(ip->dev, ip->addrs[NDIRECT]);
     a = (unsigned int*)bp->data;
     for (j = 0; j < NINDIRECT; j++) {
       if (a[j])
         bfree(ip->dev, a[j]);
     }
-    brelse(bp);
+    bufcache_release(bp);
     bfree(ip->dev, ip->addrs[NDIRECT]);
     ip->addrs[NDIRECT] = 0;
   }
@@ -482,14 +482,14 @@ readi(struct inode *ip, int user_dst, unsigned long dst, unsigned int off, unsig
     unsigned int addr = bmap(ip, off/BSIZE);
     if (addr == 0)
       break;
-    bp = bread(ip->dev, addr);
+    bp = bufcache_read(ip->dev, addr);
     m = min(n - tot, BSIZE - off%BSIZE);
     if (either_copyout(user_dst, dst, bp->data + (off % BSIZE), m) == -1) {
-      brelse(bp);
+      bufcache_release(bp);
       tot = -1;
       break;
     }
-    brelse(bp);
+    bufcache_release(bp);
   }
   return tot;
 }
@@ -516,14 +516,14 @@ writei(struct inode *ip, bool user_src, unsigned long src, unsigned int off, uns
     unsigned int addr = bmap(ip, off/BSIZE);
     if (addr == 0)
       break;
-    bp = bread(ip->dev, addr);
+    bp = bufcache_read(ip->dev, addr);
     m = min(n - tot, BSIZE - off%BSIZE);
     if (either_copyin(bp->data + (off % BSIZE), user_src, src, m) == -1) {
-      brelse(bp);
+      bufcache_release(bp);
       break;
     }
     log_write(bp);
-    brelse(bp);
+    bufcache_release(bp);
   }
 
   if (off > ip->size)

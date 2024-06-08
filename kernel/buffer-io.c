@@ -1,17 +1,12 @@
-// Buffer cache.
-//
-// The buffer cache is a linked list of buf structures holding
-// cached copies of disk block contents.  Caching disk blocks
-// in memory reduces the number of disk reads and also provides
-// a synchronization point for disk blocks used by multiple processes.
-//
-// Interface:
-// * To get a buffer for a particular disk block, call bread.
-// * After changing buffer data, call bwrite to write it to disk.
-// * When done with the buffer, call brelse.
-// * Do not use the buffer after calling brelse.
-// * Only one process at a time can use a buffer,
-//     so do not keep them longer than necessary.
+/* The buffer cache is a linked list of buf structures holding
+ * cached copies of disk block contents.
+ *
+ * Interface:
+ * * To get a buffer for a particular disk block, call bufcache_read.
+ * * After changing buffer data, call bufcache_write to write it to disk.
+ * * When done with the buffer, call bufcache_release.
+ * * Only one process at a time can use a buffer, so do not keep them longer than necessary.
+ */
 
 #include "param.h"
 #include "spinlock.h"
@@ -21,26 +16,27 @@
 #include "fs.h"
 #include "buf.h"
 
-struct {
+struct buffer_cache {
   struct spinlock lock;
   struct buf buf[NBUF];
 
-  // Linked list of all buffers, through prev/next.
-  // Sorted by how recently the buffer was used.
-  // head.next is most recent, head.prev is least.
+  /* Linked list of all buffers, through prev/next.
+   * LRU: head.next is most recent, head.prev is least.
+   */
   struct buf head;
-} bcache;
+};
 
-void binit()
+struct buffer_cache bcache;
+
+void bufcache_init()
 {
   struct buf *b;
 
   initlock(&bcache.lock);
 
-  // Create linked list of buffers
   bcache.head.prev = &bcache.head;
   bcache.head.next = &bcache.head;
-  for (b = bcache.buf; b < bcache.buf+NBUF; b++) {
+  for (b = bcache.buf; b < bcache.buf + NBUF; b++) {
     b->next = bcache.head.next;
     b->prev = &bcache.head;
     initsleeplock(&b->lock);
@@ -52,8 +48,7 @@ void binit()
 // Look through buffer cache for block on device dev.
 // If not found, allocate a buffer.
 // In either case, return locked buffer.
-static struct buf*
-bget(unsigned int dev, unsigned int blockno)
+static struct buf* bufcache_get(unsigned int dev, unsigned int blockno)
 {
   struct buf *b;
 
@@ -75,46 +70,41 @@ bget(unsigned int dev, unsigned int blockno)
     if (b->refcnt == 0) {
       b->dev = dev;
       b->blockno = blockno;
-      b->valid = 0;
+      b->valid = false;
       b->refcnt = 1;
       release(&bcache.lock);
       acquiresleep(&b->lock);
       return b;
     }
   }
-  panic("bget: no buffers");
+  panic("bufcache_get: no buffers");
 }
 
 // Return a locked buf with the contents of the indicated block.
-struct buf*
-bread(unsigned int dev, unsigned int blockno)
+struct buf* bufcache_read(unsigned int dev, unsigned int blockno)
 {
-  struct buf *b;
-
-  b = bget(dev, blockno);
+  struct buf *b = bufcache_get(dev, blockno);
   if (!b->valid) {
     virtio_disk_rw(b, 0);
-    b->valid = 1;
+    b->valid = true;
   }
   return b;
 }
 
 // Write b's contents to disk.  Must be locked.
-void
-bwrite(struct buf *b)
+void bufcache_write(struct buf *b)
 {
   if (!holdingsleep(&b->lock))
-    panic("bwrite");
+    panic("bufcache_write");
   virtio_disk_rw(b, 1);
 }
 
 // Release a locked buffer.
 // Move to the head of the most-recently-used list.
-void
-brelse(struct buf *b)
+void bufcache_release(struct buf *b)
 {
   if (!holdingsleep(&b->lock))
-    panic("brelse");
+    panic("bufcache_release");
 
   releasesleep(&b->lock);
 
@@ -133,15 +123,13 @@ brelse(struct buf *b)
   release(&bcache.lock);
 }
 
-void
-bpin(struct buf *b) {
+void bufcache_pin(struct buf *b) {
   acquire(&bcache.lock);
   b->refcnt++;
   release(&bcache.lock);
 }
 
-void
-bunpin(struct buf *b) {
+void bufcache_unpin(struct buf *b) {
   acquire(&bcache.lock);
   b->refcnt--;
   release(&bcache.lock);

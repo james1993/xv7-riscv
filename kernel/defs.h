@@ -11,12 +11,12 @@ struct superblock;
 struct pstat;
 
 // bio.c
-void            binit();
-struct buf*     bread(unsigned int, unsigned int);
-void            brelse(struct buf*);
-void            bwrite(struct buf*);
-void            bpin(struct buf*);
-void            bunpin(struct buf*);
+void            bufcache_init();
+struct buf*     bufcache_read(unsigned int, unsigned int);
+void            bufcache_release(struct buf*);
+void            bufcache_write(struct buf*);
+void            bufcache_pin(struct buf*);
+void            bufcache_unpin(struct buf*);
 
 // console.c
 void            console_init();
