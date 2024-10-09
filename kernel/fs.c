@@ -29,9 +29,8 @@ struct superblock sb;
 static void
 readsb(int dev, struct superblock *sb)
 {
-  struct buf *bp;
+  struct buf *bp = bufcache_read(1);
 
-  bp = bufcache_read(1);
   memmove(sb, bp->data, sizeof(*sb));
   bufcache_release(bp);
 }

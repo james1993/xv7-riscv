@@ -28,7 +28,7 @@ static unsigned long * kvm_make()
   return kpgtbl;
 }
 
-/* Initialize the one kernel_pagetable */
+/* Initialize the one kernel pagetable */
 void kvm_init()
 {
   kernel_pagetable = kvm_make();

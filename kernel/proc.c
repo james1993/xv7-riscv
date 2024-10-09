@@ -201,7 +201,7 @@ unsigned char initcode[] = {
 };
 
 /* Set up first user process. */
-void userinit()
+void user_init()
 {
   struct proc *p = allocproc();
 

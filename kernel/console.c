@@ -42,7 +42,7 @@ void console_put(int c)
 }
 
 /*
- * For user write()s. Blocks.
+ * For write() system calls. Blocks.
  * Returns the number of bytes written.
  */
 static int console_write(unsigned long src, int n)
@@ -61,6 +61,7 @@ static int console_write(unsigned long src, int n)
 }
 
 /*
+ * For read() system calls.
  * Copy characters out of console.buf until we reach '\n'
  * Returns number of bytes read, or -1 on error.
  */
@@ -141,6 +142,7 @@ void console_handle_irq(int c)
   release(&console.lock);
 }
 
+/* Initializes the console device. */
 void console_init()
 {
   initlock(&console.lock);

@@ -72,7 +72,7 @@ static void uart_send()
 }
 
 /* Add a character to the tx_buffer.buf and send it.
- * Blocks if the output buffer is full. (for bottom halves)
+ * Blocks if the output buffer is full.
  */
 void uart_put(int c)
 {

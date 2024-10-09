@@ -29,7 +29,7 @@ struct inode {
   unsigned int addrs[NDIRECT+1];
 };
 
-// map major device number to device functions.
+// Map major device number to device functions.
 struct devsw {
   int (*read)(unsigned long, int);
   int (*write)(unsigned long, int);

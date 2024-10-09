@@ -4,87 +4,68 @@
 #include "defs.h"
 
 void main();
-void timerinit();
 
-// entry.S needs one stack per CPU.
+/* Allocate stack space for each CPU that the kernel will run on */
 __attribute__ ((aligned (16))) char stack0[4096 * NCPU];
 
-// a scratch area per CPU for machine-mode timer interrupts.
+/* Scratch area per CPU for timer interrupts. */
 unsigned long timer_scratch[NCPU][5];
-
-// assembly code in kernelvec.S for machine-mode timer interrupt.
+/* assembly code in kernelvec.S for timer interrupt. */
 extern void timervec();
 
-// entry.S jumps here in machine mode on stack0.
+/* entry.S jumps here in machine mode on stack0. */
 void start()
 {
-  // set M Previous Privilege mode to Supervisor, for mret.
-  // AKA when we return from here, return into supervisor mode
-  unsigned long x = r_mstatus();
-  x &= ~MSTATUS_MPP_MASK;
-  x |= MSTATUS_MPP_S;
-  w_mstatus(x);
+  int id = r_mhartid(), interval = 1000000;
+  unsigned long *scratch = &timer_scratch[id][0];
 
-  // set M Exception Program Counter to main, for mret.
-  // AKA when we return from here, return to main
+  /* Set Previous Privilege mode to Supervisor, so that we will
+   * return into supervisor mode */
+  w_mstatus((r_mstatus() & ~MSTATUS_MPP_MASK) | MSTATUS_MPP_S);
+
+  /* Set Exception Program Counter to main, so that we will return
+   * into main() */
   w_mepc((unsigned long)main);
 
-  // disable paging for now. probably off by default, but just in case
-  w_satp(0);
-
-  // traps by default go to highest privelege (machine mode).
-  // delegate all interrupts and exceptions to supervisor mode.
+  /* Traps by default go to highest privelege (machine mode).
+   * Delegate all interrupts and exceptions to Supervisor mode. */
   w_medeleg(0xffff);
   w_mideleg(0xffff);
   w_sie(r_sie() | SIE_SEIE | SIE_STIE | SIE_SSIE);
 
-  // configure Physical Memory Protection to give supervisor mode
-  // access to all of physical memory.
+  /* Give supervisor mode access to all of physical memory. */
   w_pmpaddr0(0x3fffffffffffffull);
   w_pmpcfg0(0xf);
 
-  // ask for clock interrupts.
-  timerinit();
+  /* Arrange to receive timer interrupts. They will arrive in machine mode at
+   * timervec in kernelvec.S, which turns them into software interrupts for
+   * devintr() in trap.c. */
 
-  // keep each CPU's hartid in its tp register, for cpuid().
-  // so supervisor mode always knows which core is running
-  w_tp(r_mhartid());
+  /* Configure clock interrupt to occur every ~1/10th second. */
+  *(unsigned long *)CLINT_MTIMECMP(id) = *(unsigned long*)CLINT_MTIME + interval;
 
-  // machine mode return
-  __asm__ volatile("mret");
-}
-
-// arrange to receive timer interrupts.
-// they will arrive in machine mode at
-// at timervec in kernelvec.S,
-// which turns them into software interrupts for
-// devintr() in trap.c.
-void timerinit()
-{
-  // each CPU has a separate source of timer interrupts.
-  int id = r_mhartid();
-
-  // ask the CLINT for a timer interrupt.
-  int interval = 1000000; // cycles; about 1/10th second in qemu.
-  *(unsigned long*)CLINT_MTIMECMP(id) = *(unsigned long*)CLINT_MTIME + interval;
-
-  // prepare information in scratch[] for timervec.
-  // scratch[0..2] : space for timervec to save registers.
-  // scratch[3] : address of CLINT MTIMECMP register.
-  // scratch[4] : desired interval (in cycles) between timer interrupts.
-  // gives us ability to save the state and restore it while we execute
-  // interrupts
-  unsigned long *scratch = &timer_scratch[id][0];
+  /* prepare information in scratch[] for timervec.
+   * scratch[0..2] : space for timervec to save registers.
+   * scratch[3] : address of CLINT MTIMECMP register.
+   * scratch[4] : desired interval (in cycles) between timer interrupts.
+   * gives us ability to save the state and restore it while we execute
+   * interrupts */
   scratch[3] = CLINT_MTIMECMP(id);
   scratch[4] = interval;
   w_mscratch((unsigned long)scratch);
 
-  // set the machine-mode trap handler.
+  /* Set the machine-mode trap handler. */
   w_mtvec((unsigned long)timervec);
 
-  // enable machine-mode interrupts.
+  /* Enable machine-mode interrupts. */
   w_mstatus(r_mstatus() | MSTATUS_MIE);
 
-  // enable machine-mode timer interrupts.
+  /* Enable machine-mode timer interrupts. */
   w_mie(r_mie() | MIE_MTIE);
+
+  /* Keep each CPU id in its tp register */
+  w_tp(id);
+
+  /* Machine mode return */
+  __asm__ volatile("mret");
 }
